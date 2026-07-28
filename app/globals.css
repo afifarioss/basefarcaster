@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: #050505;
+  color: #f5f6f7;
+  overscroll-behavior-y: none;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(0, 82, 255, 0.35);
+  color: #ffffff;
+}
+
+/* Scrollbar — kept minimal and dark to match the theme. */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e2024;
+  border-radius: 999px;
+}
+
+@layer components {
+  .glass-card {
+    @apply relative rounded-xl2 border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl shadow-card;
+  }
+
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-full bg-base-blue px-6 py-3.5
+      text-[15px] font-semibold text-white shadow-glow-blue transition-all duration-200
+      hover:bg-base-blueLight hover:shadow-glow-blue-lg active:scale-[0.97]
+      disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.04]
+      px-6 py-3.5 text-[15px] font-semibold text-white/90 transition-all duration-200
+      hover:bg-white/[0.08] hover:border-white/[0.2] active:scale-[0.97];
+  }
+
+  .chip {
+    @apply inline-flex items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04]
+      px-4 py-2 text-sm font-medium text-white/80 transition-all duration-150
+      hover:border-base-blue/60 hover:bg-base-blue/[0.08] hover:text-white;
+  }
+
+  .chip-active {
+    @apply border-base-blue bg-base-blue/15 text-white shadow-[0_0_0_1px_rgba(0,82,255,0.5)_inset];
+  }
+}
+
+.bg-noise-grid {
+  background-image:
+    radial-gradient(60% 45% at 50% 0%, rgba(0, 82, 255, 0.16) 0%, rgba(0, 82, 255, 0) 70%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 42px 42px, 42px 42px;
+}

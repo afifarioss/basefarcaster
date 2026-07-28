@@ -1,0 +1,75 @@
+import type { Metadata } from "next";
+import { Inter, Space_Grotesk } from "next/font/google";
+import { Providers } from "./providers";
+import { APP_NAME, APP_DESCRIPTION, APP_URL } from "@/lib/constants";
+import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space",
+  display: "swap",
+});
+
+const frameEmbed = {
+  version: "next",
+  imageUrl: `${APP_URL}/images/og-image.png`,
+  button: {
+    title: "💙 Open BaseFarCaster",
+    action: {
+      type: "launch_frame",
+      name: APP_NAME,
+      url: APP_URL,
+      splashImageUrl: `${APP_URL}/images/splash.png`,
+      splashBackgroundColor: "#050505",
+    },
+  },
+};
+
+export const metadata: Metadata = {
+  title: `${APP_NAME} — Real USDC Tips on Base`,
+  description: APP_DESCRIPTION,
+  metadataBase: new URL(APP_URL),
+  openGraph: {
+    title: `${APP_NAME} — Real USDC Tips on Base`,
+    description: APP_DESCRIPTION,
+    url: APP_URL,
+    siteName: APP_NAME,
+    images: [{ url: "/images/og-image.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${APP_NAME} — Real USDC Tips on Base`,
+    description: APP_DESCRIPTION,
+  },
+  other: {
+    "fc:frame": JSON.stringify(frameEmbed),
+    "fc:miniapp": JSON.stringify(frameEmbed),
+  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#050505",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+      <body className="min-h-screen bg-surface-void font-sans antialiased">
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}

@@ -1,0 +1,114 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { Hero } from "@/components/Hero";
+import { TipCard } from "@/components/TipCard";
+import { WalletConnect } from "@/components/WalletConnect";
+import { ProfileCard } from "@/components/ProfileCard";
+import { ShareButton } from "@/components/ShareButton";
+import { Footer } from "@/components/Footer";
+import { APP_NAME, DEFAULT_RECIPIENT_WALLET } from "@/lib/constants";
+
+const STEPS = [
+  {
+    title: "Pick an amount",
+    body: "Choose a preset or enter a custom USDC amount.",
+  },
+  {
+    title: "Confirm in your wallet",
+    body: "Base Smart Wallet, Farcaster, MetaMask, Rainbow — your call.",
+  },
+  {
+    title: "It lands instantly",
+    body: "Funds settle onchain on Base in seconds, not days.",
+  },
+];
+
+export default function Home() {
+  const { setFrameReady, isFrameReady } = useMiniKit();
+  const tipRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isFrameReady) setFrameReady();
+  }, [isFrameReady, setFrameReady]);
+
+  return (
+    <main className="relative min-h-screen bg-noise-grid">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.06] bg-surface-void/80 px-5 py-4 backdrop-blur-xl">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-base-blue shadow-glow-blue">
+            <span className="font-display text-sm font-bold text-white">B</span>
+          </div>
+          <span className="font-display text-[15px] font-bold text-white">
+            {APP_NAME}
+          </span>
+        </div>
+        <WalletConnect />
+      </header>
+
+      <Hero
+        onCtaClick={() =>
+          tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+      />
+
+      <section className="px-5">
+        <div className="mx-auto flex max-w-md flex-col items-center gap-5">
+          <ProfileCard />
+
+          <div ref={tipRef} className="w-full">
+            <TipCard
+              recipient={DEFAULT_RECIPIENT_WALLET}
+              recipientLabel="the creator"
+            />
+          </div>
+
+          <ShareButton className="btn-secondary w-full max-w-md" />
+        </div>
+      </section>
+
+      <section className="mt-16 px-5">
+        <div className="mx-auto max-w-md">
+          <h2 className="text-center font-display text-2xl font-bold text-white">
+            How it works
+          </h2>
+          <div className="mt-7 space-y-4">
+            {STEPS.map((step, i) => (
+              <div key={step.title} className="glass-card flex gap-4 p-4">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-base-blue/12 font-display text-sm font-bold text-base-blueLight">
+                  {i + 1}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {step.title}
+                  </p>
+                  <p className="mt-0.5 text-sm text-white/45">{step.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-14 px-5">
+        <div className="mx-auto grid max-w-md grid-cols-3 gap-3 text-center">
+          {[
+            { label: "Settlement", value: "~2s" },
+            { label: "Network fee", value: "<$0.01" },
+            { label: "Platform fee", value: "10%" },
+          ].map((stat) => (
+            <div key={stat.label} className="glass-card px-3 py-5">
+              <p className="font-display text-xl font-bold text-white">
+                {stat.value}
+              </p>
+              <p className="mt-1 text-[11px] text-white/40">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <Footer />
+    </main>
+  );
+}
