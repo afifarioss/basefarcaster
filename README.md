@@ -1,190 +1,193 @@
-# BaseFarCaster
+<div align="center">
 
-Send real, onchain USDC tips on Base — in one tap, right inside Farcaster.
+# 💙 BaseFarCaster
 
-BaseFarCaster is a production-ready Farcaster Mini App built with Next.js 15,
-OnchainKit, MiniKit, and wagmi. It works as a native Mini App inside
-Warpcast/Farcaster clients and as a standalone web app, with wallet support
-for Base Smart Wallet, Coinbase Wallet, the Farcaster wallet, MetaMask,
-Rainbow, and any other injected wallet.
+**Real USDC tips on Base — one tap, ~2 second settlement, native inside Farcaster.**
 
+[
+
+![Base](https://img.shields.io/badge/Base-Mainnet-0052FF?style=flat-square)
+
+](https://base.org)
+[
+
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square)
+
+](https://nextjs.org)
+[
+
+![Farcaster](https://img.shields.io/badge/Farcaster-Mini%20App-855DCD?style=flat-square)
+
+](https://miniapps.farcaster.xyz)
+[
+
+![License](https://img.shields.io/badge/license-MIT-white?style=flat-square)
+
+](#license)
+
+[Live App](https://basefarcaster.vercel.app) · [Grant Strategy](./GRANT_STRATEGY.md) · [Report an Issue](../../issues)
+
+</div>
+
+---
+
+## What is this
+
+Farcaster's social graph rewards good content with likes and recasts — but none
+of that carries real economic value back to the person who made it. Existing
+tipping tools either force creators to hold volatile tokens they didn't
+choose, or live outside the feed entirely, bleeding conversion at every
+click-through.
+
+**BaseFarCaster fixes that.** It's a Farcaster Mini App that opens inline,
+inside the client, and lets anyone send a real, stable, onchain USDC tip in
+one wallet confirmation — no bridging, no gas guesswork, no context-switch.
+tip $1 USDC  →  90% to the creator, 10% platform fee, both legs batched
+→  confirmed in ~2 seconds  →  <$0.01 network cost
+Code
 ---
 
 ## Features
 
-- **Real USDC tipping on Base** — 0.1 / 1 / 5 USDC presets, or a custom amount
-- **Automatic 10% platform fee**, split onchain in the same transaction batch
-- **Multi-wallet support** — Base Smart Wallet, Coinbase Wallet, Farcaster
-  wallet (auto-detected inside Farcaster clients), MetaMask, Rainbow, and
-  generic injected wallets
-- **Farcaster profile display** — shows the connected user's FID, username,
-  and avatar when running inside a Farcaster client
-- **Success state with confetti** and a "Share on Farcaster" flow to close
-  the loop
-- **High-converting hero section** built around the 3-second rule: headline,
-  benefit-driven subheadline, bright CTA, and light social proof
-- **Dark, premium crypto UI** — true black background, Base Blue accents,
-  soft glassmorphism, and a blue glow on primary actions
-- **Proper Farcaster Mini App manifest** served dynamically from
-  `/.well-known/farcaster.json`, plus a webhook stub for lifecycle events
+- 🪙 **Real USDC tipping on Base** — `$0.10` / `$1` / `$5` presets, or any
+  custom amount
+- 🧾 **Automatic 10% platform fee**, split onchain in the same batched
+  transaction as the tip itself — exact-sum math, no rounding drift
+- 👛 **Every major wallet, out of the box** — Base Smart Wallet, Coinbase
+  Wallet, the Farcaster wallet (auto-detected inside Farcaster clients),
+  MetaMask, Rainbow, and any other injected EIP-1193 wallet
+- 🪪 **Native Farcaster identity** — shows the connected user's FID,
+  username, and avatar when running inside a Farcaster client
+- 🎉 **Success state with confetti** + a one-tap "Share on Farcaster" loop
+  that turns every tip into free distribution
+- 🌓 **Premium dark UI** — true-black background, Base Blue accents, soft
+  glassmorphism, glow-on-hover primary actions
+- 📄 **Correct, current Mini App manifest** — served dynamically from
+  `/.well-known/farcaster.json` using `@farcaster/miniapp-sdk`, with a
+  webhook stub wired up for lifecycle events (`frame_added`,
+  `notifications_enabled`, etc.)
 
 ---
 
 ## Tech stack
 
-| Layer      | Choice                                   |
-| ---------- | ----------------------------------------- |
-| Framework  | Next.js 15 (App Router)                  |
-| Wallet SDK | OnchainKit + MiniKit                     |
-| Onchain    | wagmi + viem                              |
-| Styling    | Tailwind CSS                              |
-| Chain      | Base Mainnet                              |
-| Token      | Native USDC (`0x8335...a913`)             |
+| Layer | Choice | Why |
+|---|---|---|
+| Framework | **Next.js 15** (App Router) | Server-rendered manifest route, edge-ready |
+| Wallet SDK | **OnchainKit + MiniKit** | Reference implementation for Base Mini Apps |
+| Farcaster SDK | **`@farcaster/miniapp-sdk`** + **`@farcaster/miniapp-wagmi-connector`** | Current (non-legacy) Farcaster Mini App standard |
+| Onchain | **wagmi + viem** | Type-safe contract calls, EIP-5792 batched transactions |
+| Styling | **Tailwind CSS** | Fast iteration on a tightly-scoped design system |
+| Chain | **Base Mainnet** | Sub-cent fees make sub-$1 tips economically viable |
+| Token | **Native USDC** (`0x8335…a913`) | Stable-denominated, no volatility for creators |
 
 ---
 
 ## Project structure
-
-```
 basefarcaster/
 ├── app/
-│   ├── .well-known/farcaster.json/route.ts   # Mini App manifest (dynamic)
+│   ├── .well-known/farcaster.json/route.ts   # Mini App manifest (dynamic, env-driven)
 │   ├── api/webhook/route.ts                  # Farcaster lifecycle events
-│   ├── layout.tsx                            # Root layout + fc:frame meta
-│   ├── page.tsx                               # Home: hero, tip flow, footer
-│   ├── providers.tsx                          # wagmi / OnchainKit / MiniKit
-│   └── globals.css                            # Dark theme + design tokens
+│   ├── layout.tsx                            # Root layout + fc:frame / fc:miniapp embed meta
+│   ├── page.tsx                              # Home: hero, tip flow, how-it-works, footer
+│   ├── providers.tsx                         # wagmi + OnchainKit + MiniKit setup
+│   └── globals.css                           # Dark theme + design tokens
 ├── components/
-│   ├── Hero.tsx                               # 3-second-rule hero section
-│   ├── TipCard.tsx                            # Amount select + send flow
-│   ├── SuccessModal.tsx                       # Confetti + share on success
-│   ├── WalletConnect.tsx                      # Multi-wallet connect menu
-│   ├── ProfileCard.tsx                        # FID / username / avatar
-│   ├── ShareButton.tsx                        # Warpcast compose share
+│   ├── Hero.tsx            # 3-second-rule hero section
+│   ├── TipCard.tsx         # Amount select, live fee breakdown, batched send
+│   ├── SuccessModal.tsx    # Confetti + share-on-success
+│   ├── WalletConnect.tsx   # Multi-wallet connect menu
+│   ├── ProfileCard.tsx     # FID / username / avatar (Farcaster context)
+│   ├── ShareButton.tsx     # Native Warpcast compose via sdk.actions.openUrl
 │   └── Footer.tsx
 ├── lib/
-│   ├── constants.ts                           # Fee wallet, USDC addr, etc.
-│   └── utils.ts                               # Fee-split math, formatting
-├── public/
-│   ├── .well-known/                           # (unused — manifest is dynamic)
-│   └── images/                                # icon, splash, OG, screenshot
-├── GRANT_STRATEGY.md
+│   ├── constants.ts   # Fee wallet, USDC address, tip presets
+│   └── utils.ts       # Exact-sum fee-split math, formatting, share URLs
+├── public/images/     # icon, splash, OG, screenshot assets
+├── GRANT_STRATEGY.md  # Base grant pitch, roadmap, metrics
 └── README.md
-```
-
 ---
 
 ## Getting started
 
-### 1. Install dependencies
+### 1. Install
 
 ```bash
 npm install
-```
-
-### 2. Configure environment variables
-
-```bash
+2. Configure environment
 cp .env.example .env.local
-```
-
-Fill in:
-
-- `NEXT_PUBLIC_ONCHAINKIT_API_KEY` — free key from the
-  [Coinbase Developer Platform](https://portal.cdp.coinbase.com/) →
-  OnchainKit.
-- `NEXT_PUBLIC_FEE_WALLET` — the wallet that receives your 10% platform fee.
-  Ships with a placeholder burn address
-  (`0x000000000000000000000000000000000000dEaD`) — **change this before
-  going live**.
-- `NEXT_PUBLIC_DEFAULT_RECIPIENT` — the default wallet tips are sent to.
-  In production, swap `TipCard`'s `recipient` prop for a per-profile address
-  (e.g. resolved from the viewed FID) instead of a single static wallet.
-- `NEXT_PUBLIC_URL` — your deployed URL (see step 4).
-
-### 3. Run locally
-
-```bash
-npm run dev
-```
-
-Visit `http://localhost:3000`. Outside of a Farcaster client the app runs as
-a normal web app — wallet connect will offer Coinbase/Base Smart Wallet,
-MetaMask, Rainbow, and other injected wallets. The Farcaster wallet
-connector auto-activates only when the app is opened inside a Farcaster
-client (Warpcast, etc).
-
-### 4. Deploy to Vercel
-
-```bash
+Variable
+What it's for
+NEXT_PUBLIC_ONCHAINKIT_API_KEY
+Free key from Coinbase Developer Platform → Client API key (not a secret trading key)
+NEXT_PUBLIC_FEE_WALLET
+Wallet that receives the 10% platform fee — ships as a placeholder burn address, change before going live
+NEXT_PUBLIC_DEFAULT_RECIPIENT
+Wallet tips are sent to — swap for a per-profile address in production
+NEXT_PUBLIC_URL
+Your deployed domain, no trailing slash
+FARCASTER_HEADER / FARCASTER_PAYLOAD / FARCASTER_SIGNATURE
+Server-only — generated by Warpcast, see step 4
+3. Run locally
+Outside a Farcaster client the app runs as a normal web app — wallet
+connect offers Coinbase/Base Smart Wallet, MetaMask, Rainbow, and other
+injected wallets. The Farcaster wallet connector auto-activates only when
+opened inside a Farcaster client.
+4. Deploy
 npm i -g vercel
 vercel
-```
-
-Or connect the repo in the [Vercel dashboard](https://vercel.com/new). Add
-the same environment variables from `.env.local` in
-**Project Settings → Environment Variables**, then set
-`NEXT_PUBLIC_URL` to your production domain (e.g.
-`https://basefarcaster.vercel.app` or your custom domain) and redeploy.
-
-### 5. Connect your Farcaster account (account association)
-
-This step proves your Farcaster account owns the deployed domain, which is
-required for the Mini App to render correctly (icon, name, launch button)
+Add the same env vars in your Vercel project settings (or via
+vercel env add <NAME>), then:
+vercel --prod
+5. Connect your Farcaster account
+Required for the app to render its icon, name, and launch button correctly
 inside Farcaster clients.
-
-1. Deploy the app first — you need a live `NEXT_PUBLIC_URL`.
-2. Open Warpcast → **Settings → Developer → Domains**.
-3. Enter your deployed domain and tap **Generate account association**.
-4. Warpcast returns three values: `header`, `payload`, `signature`.
-5. Add them to your Vercel environment variables as `FARCASTER_HEADER`,
-   `FARCASTER_PAYLOAD`, and `FARCASTER_SIGNATURE`.
-6. Redeploy. Verify the manifest is live at
-   `https://your-domain/.well-known/farcaster.json`.
-7. Paste your app URL into Warpcast's Mini App developer tool to preview
-   and validate the embed.
-
-### 6. Replace placeholder art
-
-`public/images/icon.png`, `splash.png`, `og-image.png`, and
-`screenshot-1.png` are generated placeholders. Swap them for real brand
-assets before submitting to the Base or Farcaster app directories.
-
----
-
-## How the fee split works
-
-Every tip is sent as **two USDC transfers batched into a single wallet
-confirmation** (via `wagmi`'s `sendCalls`, EIP-5792) where the connected
-wallet supports batching — Base Smart Wallet and the Farcaster wallet both
-do. Wallets without batching support fall back to two sequential prompts.
-
-```
-tip amount × 90%  → creator wallet
-tip amount × 10%  → platform fee wallet
-```
-
-The split is computed in `lib/utils.ts#splitTipAmount` using integer USDC
-base units (6 decimals) so the two legs always sum exactly back to the
-original amount — no rounding drift.
-
-To change the fee percentage, edit `PLATFORM_FEE_BPS` in
-`lib/constants.ts` (basis points; `1000` = 10%).
-
----
-
-## Wallet support notes
-
-- **Base Smart Wallet / Coinbase Wallet** — via `coinbaseWallet` connector,
-  `preference: "all"` (supports both smart wallet and EOA).
-- **Farcaster wallet** — via `@farcaster/frame-wagmi-connector`. Only
-  activates inside a Farcaster client; invisible/no-op on the open web.
-- **MetaMask** — dedicated `metaMask()` connector for reliable deep links.
-- **Rainbow & other injected wallets** — caught by the generic `injected()`
-  connector, which detects any EIP-1193 provider in the browser.
-
----
-
-## License
-
+Deploy first — you need a live URL.
+Warpcast → Settings → Developer → Domains → enter your domain →
+Generate account association.
+Copy the three returned values into FARCASTER_HEADER,
+FARCASTER_PAYLOAD, FARCASTER_SIGNATURE.
+Redeploy, then verify at https://your-domain/.well-known/farcaster.json.
+Paste your URL into Warpcast's Mini App Developer Tools to preview
+the live embed.
+How the fee split works
+Every tip is two USDC transfers, batched into a single wallet
+confirmation via wagmi's sendCalls (EIP-5792) on wallets that support
+it — Base Smart Wallet and the Farcaster wallet both do. Wallets without
+batching support fall back to two sequential prompts.
+tip amount × 90%  →  creator wallet
+tip amount × 10%  →  platform fee wallet
+Computed in lib/utils.ts#splitTipAmount using integer USDC base units (6
+decimals), so the two legs always sum exactly back to the original amount —
+no rounding drift. Change the percentage via PLATFORM_FEE_BPS in
+lib/constants.ts (basis points; 1000 = 10%).
+Wallet support
+Wallet
+Connector
+Notes
+Base Smart Wallet / Coinbase Wallet
+coinbaseWallet()
+preference: "all" — supports smart wallet and EOA
+Farcaster wallet
+farcasterMiniApp()
+Auto-activates only inside a Farcaster client
+MetaMask
+metaMask()
+Dedicated connector for reliable deep links
+Rainbow & others
+injected()
+Roadmap
+See GRANT_STRATEGY.md for the full 3-month plan.
+Short version:
+[ ] Per-FID recipient resolution (tip any creator, not one fixed wallet)
+[ ] Push notifications on tip received (webhook stub already scaffolded)
+[ ] Cast actions — tip directly from the feed, no Mini App open required
+[ ] Public leaderboard / creator profile pages
+[ ] Recurring / subscription tips
+Contributing
+Issues and PRs welcome. The fee-split tipping primitive
+(lib/utils.ts#splitTipAmount + batched sendCalls) is designed to be
+forked into adjacent use cases — paid unlocks, bounty payouts, split
+payments — so feel free to build on it.
+License
 MIT — build on it freely.
