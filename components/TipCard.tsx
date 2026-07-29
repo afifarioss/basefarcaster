@@ -88,7 +88,7 @@ export function TipCard({
         {
           capabilities: {
             paymasterService: {
-              url: process.env.NEXT_PUBLIC_PAYMASTER_URL,
+              url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
             },
           },
           to: token.address,
@@ -101,7 +101,7 @@ export function TipCard({
         {
           capabilities: {
             paymasterService: {
-              url: process.env.NEXT_PUBLIC_PAYMASTER_URL,
+              url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
             },
           },
           to: token.address,
@@ -118,7 +118,7 @@ export function TipCard({
           calls,
           capabilities: {
             paymasterService: {
-              url: process.env.NEXT_PUBLIC_PAYMASTER_URL,
+              url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
             },
           },
         },
