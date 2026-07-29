@@ -92,3 +92,20 @@ export const ERC20_ABI = [
     outputs: [{ name: "", type: "uint8" }],
   },
 ] as const;
+
+/**
+ * Venice's staking contract — deposit VVV here, receive sVVV back 1:1.
+ * Verified: Basescan labels it "Venice: sVVV Token", and it matches
+ * Venice's own official fact sheet PDF and a real wallet transaction
+ * preview against venice.ai/token. Do not change without re-verifying.
+ */
+export const VVV_STAKING_ADDRESS: `0x${string}` =
+  "0x321b7ff75154472B18EDb199033fF4D116F340Ff";
+
+/**
+ * Staked VVV required to unlock Venice Pro, per Venice's own official
+ * page (venice.ai/lp/vvv): "When you stake 100 VVV you'll enjoy free
+ * access to Venice Pro." Sourced directly — do not adjust without
+ * re-checking that page.
+ */
+export const VVV_PRO_STAKE_THRESHOLD = 100;
