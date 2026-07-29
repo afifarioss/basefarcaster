@@ -43,7 +43,7 @@ just written down.
 | Base / Farcaster / Venice attribution | ✅ Live, official brand assets |
 | CDP Paymaster (gasless tipping) | ✅ Deployed — awaiting first real-funds confirmation on Basescan |
 | VVV staking (approve → stake) | ✅ Deployed against the verified [sVVV contract](https://basescan.org/address/0x321b7ff75154472B18EDb199033fF4D116F340Ff) — awaiting first real-funds confirmation |
-| Zap — Mini App launcher name | ✅ Live |
+| BaseZap — Mini App launcher name | ✅ Live |
 
 ---
 
@@ -89,7 +89,7 @@ tip $1 USDC  →  95% to the creator, 5% platform fee, both legs batched
 - 📄 **Correct, current Mini App manifest** — served dynamically from
   `/.well-known/farcaster.json` using `@farcaster/miniapp-sdk`, with a
   webhook stub wired up for lifecycle events (`frame_added`,
-  `notifications_enabled`, etc.), launcher name **Zap**
+  `notifications_enabled`, etc.), launcher name **BaseZap**
 
 ---
 

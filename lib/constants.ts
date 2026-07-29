@@ -58,7 +58,7 @@ export const DEFAULT_RECIPIENT_WALLET =
 export const TIP_PRESETS = [0.1, 1, 5] as const;
 
 export const APP_NAME = "BaseFarCaster";
-export const APP_SHORT_NAME = "Zap";
+export const APP_SHORT_NAME = "BaseZap";
 export const APP_DESCRIPTION =
   "Tip any Farcaster user with real USDC on Base — one tap, no bridging, no token gymnastics.";
 export const APP_TAGLINE = "USDC tipping for Farcaster.";
