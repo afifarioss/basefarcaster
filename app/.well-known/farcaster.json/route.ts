@@ -27,7 +27,7 @@ export async function GET() {
     tagline: "Tipping, onchain, in one tap.",
     screenshotUrls: [`${APP_URL}/images/screenshot-1.png`],
     heroImageUrl: `${APP_URL}/images/og-image.png`,
-    ogTitle: `${APP_NAME} — Real USDC Tips on Base`,
+    ogTitle: `${APP_SHORT_NAME} — Real USDC Tips on Base`,
     ogDescription: APP_DESCRIPTION,
     ogImageUrl: `${APP_URL}/images/og-image.png`,
     noindex: false,
