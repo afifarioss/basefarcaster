@@ -1,4 +1,4 @@
-import { APP_NAME, APP_DESCRIPTION, APP_URL } from "@/lib/constants";
+import { APP_NAME, APP_SHORT_NAME, APP_DESCRIPTION, APP_URL } from "@/lib/constants";
 
 /**
  * Farcaster Mini App manifest.
@@ -12,7 +12,7 @@ import { APP_NAME, APP_DESCRIPTION, APP_URL } from "@/lib/constants";
 export async function GET() {
   const appConfig = {
     version: "1",
-    name: APP_NAME,
+    name: APP_SHORT_NAME,
     iconUrl: `${APP_URL}/images/icon.png`,
     homeUrl: APP_URL,
     imageUrl: `${APP_URL}/images/og-image.png`,

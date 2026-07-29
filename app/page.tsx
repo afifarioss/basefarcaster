@@ -11,6 +11,8 @@ import { ProfileCard } from "@/components/ProfileCard";
 import { ShareButton } from "@/components/ShareButton";
 import { VeniceAttribution } from "@/components/VeniceAttribution";
 import { VeniceProStatus } from "@/components/VeniceProStatus";
+import { StakeCard } from "@/components/StakeCard";
+import { BuiltWith } from "@/components/BuiltWith";
 import { Footer } from "@/components/Footer";
 import {
   APP_NAME,
@@ -84,6 +86,7 @@ function HomeContent() {
           <ShareButton className="btn-secondary w-full max-w-md" />
           <VeniceAttribution />
           <VeniceProStatus />
+          <StakeCard />
         </div>
       </section>
 
@@ -127,6 +130,7 @@ function HomeContent() {
         </div>
       </section>
 
+      <BuiltWith />
       <Footer />
     </main>
   );
