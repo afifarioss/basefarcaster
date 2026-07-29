@@ -8,10 +8,12 @@ import { formatUsdc } from "@/lib/utils";
 export function SuccessModal({
   amount,
   txHash,
+  tokenSymbol = "USDC",
   onClose,
 }: {
   amount: number;
   txHash: string;
+  tokenSymbol?: string;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -48,8 +50,8 @@ export function SuccessModal({
           Tip sent onchain
         </h3>
         <p className="mt-1 text-center text-sm text-white/55">
-          {formatUsdc(amount)} USDC delivered on Base. It just cleared in
-          seconds.
+          {formatUsdc(amount)} {tokenSymbol} delivered on Base. It just
+          cleared in seconds.
         </p>
 
         <a
@@ -65,7 +67,7 @@ export function SuccessModal({
           <ShareButton
             text={`Just tipped ${formatUsdc(
               amount
-            )} USDC onchain with BaseFarCaster 💙 Real money, real speed, real Base.`}
+            )} ${tokenSymbol} onchain with BaseFarCaster 💙 Real money, real speed, real Base.`}
           />
           <button onClick={onClose} className="btn-primary w-full">
             Done

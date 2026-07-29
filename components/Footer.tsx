@@ -1,4 +1,4 @@
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME, PLATFORM_FEE_BPS } from "@/lib/constants";
 
 export function Footer() {
   return (
@@ -8,8 +8,8 @@ export function Footer() {
         <span className="font-medium text-white/50">Base</span>
       </p>
       <p className="mt-1.5 text-[11px] text-white/25">
-        A 10% platform fee is applied to every tip and supports ongoing
-        development. All transfers are onchain and final.
+        A {PLATFORM_FEE_BPS / 100}% platform fee is applied to every tip and
+        supports ongoing development. All transfers are onchain and final.
       </p>
     </footer>
   );

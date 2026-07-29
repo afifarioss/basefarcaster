@@ -2,13 +2,15 @@ import { parseUnits } from "viem";
 import { PLATFORM_FEE_BPS, FEE_DENOMINATOR, USDC_DECIMALS } from "./constants";
 
 /**
- * Splits a USDC tip amount (human-readable, e.g. 1.5) into the recipient
- * and platform-fee legs, both returned as bigint base units (6 decimals).
+ * Splits a tip amount (human-readable, e.g. 1.5) into the recipient and
+ * platform-fee legs, both returned as bigint base units. Works for any
+ * token's decimals — defaults to USDC's (6) since that's the primary
+ * tipping currency; pass a token's own decimals for others (e.g. VVV).
  * Fee is rounded down; recipient receives the remainder, so the two legs
  * always sum exactly back to the original transfer amount.
  */
-export function splitTipAmount(amountUsdc: number) {
-  const total = parseUnits(amountUsdc.toFixed(USDC_DECIMALS), USDC_DECIMALS);
+export function splitTipAmount(amount: number, decimals: number = USDC_DECIMALS) {
+  const total = parseUnits(amount.toFixed(decimals), decimals);
   const fee = (total * BigInt(PLATFORM_FEE_BPS)) / BigInt(FEE_DENOMINATOR);
   const recipientAmount = total - fee;
   return { total, fee, recipientAmount };

@@ -1,19 +1,26 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import { isAddress } from "viem";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { Hero } from "@/components/Hero";
 import { TipCard } from "@/components/TipCard";
 import { WalletConnect } from "@/components/WalletConnect";
 import { ProfileCard } from "@/components/ProfileCard";
 import { ShareButton } from "@/components/ShareButton";
+import { VeniceAttribution } from "@/components/VeniceAttribution";
 import { Footer } from "@/components/Footer";
-import { APP_NAME, DEFAULT_RECIPIENT_WALLET } from "@/lib/constants";
+import {
+  APP_NAME,
+  DEFAULT_RECIPIENT_WALLET,
+  PLATFORM_FEE_BPS,
+} from "@/lib/constants";
 
 const STEPS = [
   {
     title: "Pick an amount",
-    body: "Choose a preset or enter a custom USDC amount.",
+    body: "Choose a preset or enter a custom amount.",
   },
   {
     title: "Confirm in your wallet",
@@ -25,9 +32,21 @@ const STEPS = [
   },
 ];
 
-export default function Home() {
+function HomeContent() {
   const { setFrameReady, isFrameReady } = useMiniKit();
   const tipRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+
+  // Supports personalized tip links: basefarcaster.vercel.app/?to=0x...&label=alice.eth
+  // Lets anyone share a link that tips a specific creator directly, without
+  // needing a full cast-action integration.
+  const toParam = searchParams.get("to");
+  const labelParam = searchParams.get("label");
+  const recipient =
+    toParam && isAddress(toParam)
+      ? (toParam as `0x${string}`)
+      : DEFAULT_RECIPIENT_WALLET;
+  const recipientLabel = labelParam || "the creator";
 
   useEffect(() => {
     if (!isFrameReady) setFrameReady();
@@ -58,13 +77,11 @@ export default function Home() {
           <ProfileCard />
 
           <div ref={tipRef} className="w-full">
-            <TipCard
-              recipient={DEFAULT_RECIPIENT_WALLET}
-              recipientLabel="the creator"
-            />
+            <TipCard recipient={recipient} recipientLabel={recipientLabel} />
           </div>
 
           <ShareButton className="btn-secondary w-full max-w-md" />
+          <VeniceAttribution />
         </div>
       </section>
 
@@ -96,7 +113,7 @@ export default function Home() {
           {[
             { label: "Settlement", value: "~2s" },
             { label: "Network fee", value: "<$0.01" },
-            { label: "Platform fee", value: "10%" },
+            { label: "Platform fee", value: `${PLATFORM_FEE_BPS / 100}%` },
           ].map((stat) => (
             <div key={stat.label} className="glass-card px-3 py-5">
               <p className="font-display text-xl font-bold text-white">
@@ -110,5 +127,14 @@ export default function Home() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function Home() {
+  // useSearchParams requires a Suspense boundary for static rendering.
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }

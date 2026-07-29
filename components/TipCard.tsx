@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useAccount, useConnect } from "wagmi";
+import { useAccount, useConnect, useReadContract } from "wagmi";
 // EIP-5792 batched calls are still exposed from wagmi's experimental entry
 // point as of wagmi v2.13. Check the wagmi changelog when upgrading —
 // this may move to the root `wagmi` export in a future major version.
@@ -10,8 +10,11 @@ import { encodeFunctionData } from "viem";
 import {
   ERC20_ABI,
   PLATFORM_FEE_BPS,
+  PLATFORM_FEE_WALLET,
   TIP_PRESETS,
-  USDC_ADDRESS,
+  TIPPABLE_TOKENS,
+  USDC_DECIMALS,
+  type TippableTokenSymbol,
 } from "@/lib/constants";
 import { formatUsdc, splitTipAmount } from "@/lib/utils";
 import { SuccessModal } from "./SuccessModal";
@@ -26,6 +29,21 @@ export function TipCard({
   const { isConnected } = useAccount();
   const { connectors, connect } = useConnect();
   const { sendCalls, isPending } = useSendCalls();
+
+  const [tokenSymbol, setTokenSymbol] =
+    useState<TippableTokenSymbol>("USDC");
+  const token = TIPPABLE_TOKENS.find((t) => t.symbol === tokenSymbol)!;
+
+  // USDC's decimals are a known constant (6). VVV's are fetched live from
+  // its own contract rather than assumed, since we don't hardcode facts
+  // about a token we don't control.
+  const { data: fetchedDecimals } = useReadContract({
+    address: token.address,
+    abi: ERC20_ABI,
+    functionName: "decimals",
+    query: { enabled: token.decimals === null },
+  });
+  const decimals = token.decimals ?? fetchedDecimals ?? 18;
 
   const [selected, setSelected] = useState<number>(TIP_PRESETS[1]);
   const [custom, setCustom] = useState("");
@@ -45,8 +63,8 @@ export function TipCard({
   }, [isCustom, custom, selected]);
 
   const { fee, recipientAmount } = useMemo(
-    () => splitTipAmount(amount || 0),
-    [amount]
+    () => splitTipAmount(amount || 0, decimals),
+    [amount, decimals]
   );
 
   async function handleTip() {
@@ -63,12 +81,17 @@ export function TipCard({
     setErrorMsg("");
 
     try {
-      // Two ERC-20 transfers batched into one wallet confirmation where the
+      // Two transfers batched into one wallet confirmation where the
       // connector supports EIP-5792 (Smart Wallet, Farcaster wallet, etc.);
       // falls back to sequential prompts on wallets without batching.
       const calls = [
         {
-          to: USDC_ADDRESS,
+          capabilities: {
+            paymasterService: {
+              url: process.env.NEXT_PUBLIC_PAYMASTER_URL,
+            },
+          },
+          to: token.address,
           data: encodeFunctionData({
             abi: ERC20_ABI,
             functionName: "transfer",
@@ -76,15 +99,16 @@ export function TipCard({
           }),
         },
         {
-          to: USDC_ADDRESS,
+          capabilities: {
+            paymasterService: {
+              url: process.env.NEXT_PUBLIC_PAYMASTER_URL,
+            },
+          },
+          to: token.address,
           data: encodeFunctionData({
             abi: ERC20_ABI,
             functionName: "transfer",
-            args: [
-              (process.env.NEXT_PUBLIC_FEE_WALLET as `0x${string}`) ||
-                "0x000000000000000000000000000000000000dEaD",
-              fee,
-            ],
+            args: [PLATFORM_FEE_WALLET, fee],
           }),
         },
       ];
@@ -92,6 +116,11 @@ export function TipCard({
       sendCalls(
         { calls },
         {
+          capabilities: {
+            paymasterService: {
+              url: process.env.NEXT_PUBLIC_PAYMASTER_URL,
+            },
+          },
           onSuccess: (data) => {
             setTxHash(data.id);
             setStatus("success");
@@ -122,7 +151,23 @@ export function TipCard({
         100% onchain. Delivered to {recipientLabel} in seconds.
       </p>
 
-      <div className="mt-5 grid grid-cols-3 gap-2">
+      {/* Token selector — USDC is the default; VVV is offered as a
+          secondary option, not the headline currency. */}
+      <div className="mt-4 flex gap-2">
+        {TIPPABLE_TOKENS.map((t) => (
+          <button
+            key={t.symbol}
+            onClick={() => setTokenSymbol(t.symbol)}
+            className={`chip !py-2 flex-1 ${
+              tokenSymbol === t.symbol ? "chip-active" : ""
+            }`}
+          >
+            {t.symbol}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
         {TIP_PRESETS.map((preset) => (
           <button
             key={preset}
@@ -134,7 +179,8 @@ export function TipCard({
               !isCustom && selected === preset ? "chip-active" : ""
             }`}
           >
-            ${formatUsdc(preset)}
+            {tokenSymbol === "USDC" ? "$" : ""}
+            {formatUsdc(preset)}
           </button>
         ))}
       </div>
@@ -162,22 +208,28 @@ export function TipCard({
         <div className="flex justify-between text-white/55">
           <span>{recipientLabel} receives</span>
           <span className="text-white/85">
-            {formatUsdc(amount ? amount * (1 - PLATFORM_FEE_BPS / 10000) : 0)} USDC
+            {formatUsdc(amount ? amount * (1 - PLATFORM_FEE_BPS / 10000) : 0)}{" "}
+            {tokenSymbol}
           </span>
         </div>
         <div className="flex justify-between text-white/40">
-          <span>Platform fee (10%)</span>
-          <span>{formatUsdc(amount ? amount * (PLATFORM_FEE_BPS / 10000) : 0)} USDC</span>
+          <span>Platform fee ({PLATFORM_FEE_BPS / 100}%)</span>
+          <span>
+            {formatUsdc(amount ? amount * (PLATFORM_FEE_BPS / 10000) : 0)}{" "}
+            {tokenSymbol}
+          </span>
         </div>
         <div className="!mt-2.5 flex justify-between border-t border-white/[0.06] pt-2.5 font-semibold text-white">
           <span>Total</span>
-          <span>{formatUsdc(amount)} USDC</span>
+          <span>
+            {formatUsdc(amount)} {tokenSymbol}
+          </span>
         </div>
       </div>
 
       <p className="mt-3 text-center text-[11px] leading-relaxed text-white/35">
-        A 10% platform fee supports BaseFarCaster and keeps tipping free to
-        build on.
+        A {PLATFORM_FEE_BPS / 100}% platform fee supports BaseFarCaster and
+        keeps tipping free to build on.
       </p>
 
       <button
@@ -188,7 +240,7 @@ export function TipCard({
         {status === "sending" || isPending
           ? "Confirm in wallet…"
           : isConnected
-          ? `Tip $${formatUsdc(amount)} USDC`
+          ? `Tip ${formatUsdc(amount)} ${tokenSymbol}`
           : "Connect & Tip"}
       </button>
 
@@ -200,6 +252,7 @@ export function TipCard({
         <SuccessModal
           amount={amount}
           txHash={txHash}
+          tokenSymbol={tokenSymbol}
           onClose={() => setStatus("idle")}
         />
       )}

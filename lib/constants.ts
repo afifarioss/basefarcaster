@@ -3,7 +3,7 @@ import { base } from "wagmi/chains";
 /**
  * ─────────────────────────────────────────────────────────────────────────
  * PLATFORM FEE WALLET
- * This is the address that receives the 10% platform fee on every tip.
+ * This is the address that receives the platform fee on every tip.
  * Change this to your own wallet before deploying to production.
  * ─────────────────────────────────────────────────────────────────────────
  */
@@ -11,8 +11,8 @@ export const PLATFORM_FEE_WALLET =
   (process.env.NEXT_PUBLIC_FEE_WALLET as `0x${string}`) ||
   "0x000000000000000000000000000000000000dEaD";
 
-/** Platform fee, in basis points. 1000 = 10%. */
-export const PLATFORM_FEE_BPS = 1000;
+/** Platform fee, in basis points. 500 = 5%. */
+export const PLATFORM_FEE_BPS = 500;
 export const FEE_DENOMINATOR = 10000;
 
 /** Native USDC on Base Mainnet. */
@@ -20,6 +20,28 @@ export const USDC_ADDRESS: `0x${string}` =
   "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 export const USDC_DECIMALS = 6;
+
+/**
+ * Venice AI's VVV token on Base — verified contract, real liquidity.
+ * https://basescan.org/token/0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf
+ * Decimals are fetched live from the contract at runtime rather than
+ * hardcoded here, since we don't hardcode facts about a token we don't
+ * control.
+ */
+export const VVV_ADDRESS: `0x${string}` =
+  "0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf";
+
+/**
+ * Tokens tippable in the app. USDC is first and is the default — per
+ * product positioning, this stays a USDC-tipping app first, with VVV
+ * offered as a secondary option, not the headline feature.
+ */
+export const TIPPABLE_TOKENS = [
+  { symbol: "USDC", address: USDC_ADDRESS, decimals: USDC_DECIMALS },
+  { symbol: "VVV", address: VVV_ADDRESS, decimals: null }, // fetched live
+] as const;
+
+export type TippableTokenSymbol = (typeof TIPPABLE_TOKENS)[number]["symbol"];
 
 export const CHAIN = base;
 
@@ -37,13 +59,13 @@ export const TIP_PRESETS = [0.1, 1, 5] as const;
 
 export const APP_NAME = "BaseFarCaster";
 export const APP_DESCRIPTION =
-  "Send real USDC tips on Base, right inside Farcaster.";
-export const APP_TAGLINE = "Tipping, onchain, in one tap.";
+  "Tip any Farcaster user with real USDC on Base — one tap, no bridging, no token gymnastics.";
+export const APP_TAGLINE = "USDC tipping for Farcaster.";
 
 export const APP_URL =
   process.env.NEXT_PUBLIC_URL || "https://basefarcaster.vercel.app";
 
-/** Minimal ERC-20 ABI — just what we need for balance + transfer. */
+/** Minimal ERC-20 ABI — just what we need for balance, transfer, decimals. */
 export const ERC20_ABI = [
   {
     type: "function",

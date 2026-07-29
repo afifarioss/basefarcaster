@@ -111,7 +111,7 @@ confirmation.
 - **USDC-first by design**, not token-first. This removes the two biggest
   objections creators have to onchain tips: price volatility and the
   awkwardness of promoting a token they didn't choose.
-- **Batched, one-confirmation fee split.** The 10%-platform-fee model is
+- **Batched, one-confirmation fee split.** The 5%-platform-fee model is
   usually implemented as two separate transactions (annoying UX) or
   handled off-chain (defeats the point). BaseFarCaster batches both legs
   into a single wallet confirmation via EIP-5792, which is only smooth on
