@@ -114,13 +114,15 @@ export function TipCard({
       ];
 
       sendCalls(
-        { calls },
         {
+          calls,
           capabilities: {
             paymasterService: {
               url: process.env.NEXT_PUBLIC_PAYMASTER_URL,
             },
           },
+        },
+        {
           onSuccess: (data) => {
             setTxHash(data.id);
             setStatus("success");
