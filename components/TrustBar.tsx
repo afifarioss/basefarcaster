@@ -1,8 +1,8 @@
-import { PLATFORM_FEE_BPS } from "@/lib/constants";
+import { PLATFORM_FEE_BPS, TIPPABLE_TOKENS } from "@/lib/constants";
 
 export function TrustBar() {
   const items = [
-    { label: "Token", value: "USDC" },
+    { label: "Tokens", value: TIPPABLE_TOKENS.map((t) => t.symbol).join(" · ") },
     { label: "Chain", value: "Base" },
     { label: "Fee", value: `${PLATFORM_FEE_BPS / 100}%` },
     { label: "Settles", value: "~2s" },
