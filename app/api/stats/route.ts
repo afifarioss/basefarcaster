@@ -56,6 +56,8 @@ export async function GET() {
       windowHours: 3,
     });
   } catch (err) {
+    console.error("Stats API error:", err);
+
     // Fail quiet — social proof is a nice-to-have, never block the page.
     return Response.json(
       { tipCount: 0, totalVolumeUsdc: 0, windowHours: 3, error: true },
