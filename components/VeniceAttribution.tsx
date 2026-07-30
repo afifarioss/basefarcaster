@@ -43,11 +43,10 @@ export function VeniceAttribution() {
         className="transition hover:opacity-80"
       >
         <Image
-          src="/images/venice-logo.jpg"
+          src="/images/venice-logo.png"
           alt="Built in Venice"
-          className="object-contain"
           width={95}
-          height={64}
+          height={44}
         />
       </a>
     </div>
