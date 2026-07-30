@@ -7,6 +7,7 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { Hero } from "@/components/Hero";
 import { TipCard } from "@/components/TipCard";
 import { UsernameInput } from "@/components/UsernameInput";
+import { TrustChecklist } from "@/components/TrustChecklist";
 import { WalletConnect } from "@/components/WalletConnect";
 import { ProfileCard } from "@/components/ProfileCard";
 import { ShareButton } from "@/components/ShareButton";
@@ -102,6 +103,7 @@ function HomeContent() {
             <TipCard recipient={activeRecipient} recipientLabel={activeLabel} />
           </div>
 
+          <TrustChecklist />
           <ShareButton className="btn-secondary w-full max-w-md" />
           <VeniceAttribution />
           <VeniceProStatus />
