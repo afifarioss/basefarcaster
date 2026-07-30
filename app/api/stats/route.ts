@@ -24,7 +24,7 @@ export const revalidate = 30; // cache for 30s at the edge
 
 const client = createPublicClient({ chain: base, transport: http() });
 
-const LOOKBACK_BLOCKS = BigInt(50_000); // ~1 day on Base at ~2s blocks
+const LOOKBACK_BLOCKS = BigInt(5_000); // ~1 day on Base at ~2s blocks
 
 export async function GET() {
   try {
@@ -53,12 +53,12 @@ export async function GET() {
     return Response.json({
       tipCount,
       totalVolumeUsdc: Number(formatUnits(totalVolumeUnits, USDC_DECIMALS)),
-      windowHours: 24,
+      windowHours: 3,
     });
   } catch (err) {
     // Fail quiet — social proof is a nice-to-have, never block the page.
     return Response.json(
-      { tipCount: 0, totalVolumeUsdc: 0, windowHours: 24, error: true },
+      { tipCount: 0, totalVolumeUsdc: 0, windowHours: 3, error: true },
       { status: 200 }
     );
   }
