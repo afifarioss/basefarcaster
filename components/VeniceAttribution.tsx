@@ -45,8 +45,9 @@ export function VeniceAttribution() {
         <Image
           src="/images/venice-logo.jpg"
           alt="Built in Venice"
+          className="object-contain"
           width={95}
-          height={44}
+          height={64}
         />
       </a>
     </div>
