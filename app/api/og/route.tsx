@@ -15,69 +15,69 @@ export async function GET() {
           justifyContent: "center",
           backgroundColor: "#0A0A0A",
           fontFamily: "sans-serif",
-          position: "relative",
+          padding: "60px 0",
         }}
       >
-        <div
-          style={{
-            fontSize: 72,
-            fontWeight: 800,
-            color: "#FFFFFF",
-            textAlign: "center",
-            padding: "0 90px",
-            lineHeight: 1.2,
-            marginBottom: 56,
-            display: "flex",
-          }}
-        >
-          Tip Farcaster creators in USDC on Base
-        </div>
-
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 8,
-            border: "1px solid rgba(255,255,255,0.18)",
-            borderRadius: 20,
-            padding: "32px 56px",
+            fontSize: 78,
+            fontWeight: 800,
+            color: "#FFFFFF",
+            textAlign: "center",
+            lineHeight: 1.15,
+            marginBottom: 48,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              fontSize: 38,
-              fontWeight: 600,
-            }}
-          >
-            <span style={{ color: "#4EA8FF" }}>@creator</span>
-            <span style={{ color: "rgba(255,255,255,0.5)" }}>→</span>
-            <span style={{ color: "#FFFFFF" }}>1 USDC</span>
+          <span>Tip</span>
+          <span>Farcaster creators</span>
+          <span>in USDC on Base</span>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 20,
+            border: "1px solid rgba(255,255,255,0.25)",
+            borderRadius: 20,
+            padding: "28px 48px",
+            fontSize: 36,
+            fontWeight: 600,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <img
+              src="https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/0be7c7dc-a482-43cd-7401-43e7db951400/original"
+              width="56"
+              height="56"
+              style={{ borderRadius: "999px" }}
+            />
+            <span style={{ color: "#4EA8FF" }}>@afifarioss</span>
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              fontSize: 38,
-              fontWeight: 600,
-              color: "#4EA8FF",
-            }}
-          >
-            <span style={{ color: "rgba(255,255,255,0.5)" }}>→</span>
-            Base
+
+          <span style={{ color: "rgba(255,255,255,0.5)" }}>→</span>
+          <span style={{ color: "#FFFFFF" }}>1 USDC</span>
+          <span style={{ color: "rgba(255,255,255,0.5)" }}>→</span>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <img
+              src="https://i.imgur.com/naZWL9n.gif"
+              width="56"
+              height="56"
+              style={{ borderRadius: "999px" }}
+            />
+            <span style={{ color: "#4EA8FF" }}>@rish</span>
           </div>
         </div>
 
         <div
           style={{
-            position: "absolute",
-            bottom: 60,
-            fontSize: 26,
+            fontSize: 28,
             color: "rgba(255,255,255,0.55)",
+            marginTop: 48,
             display: "flex",
           }}
         >
