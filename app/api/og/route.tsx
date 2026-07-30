@@ -13,61 +13,95 @@ export async function GET() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#0A0A0A",
+          backgroundColor: "#050608",
+          backgroundImage:
+            "radial-gradient(circle at 15% 10%, rgba(78,168,255,0.20) 0%, transparent 40%), radial-gradient(circle at 85% 90%, rgba(0,214,127,0.16) 0%, transparent 40%), linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+          backgroundSize: "100% 100%, 100% 100%, 48px 48px, 48px 48px",
           fontFamily: "sans-serif",
-          padding: "60px 0",
+          padding: "56px 0",
         }}
       >
+        {/* Eyebrow badge */}
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            fontSize: 78,
-            fontWeight: 800,
-            color: "#FFFFFF",
-            textAlign: "center",
-            lineHeight: 1.15,
-            marginBottom: 48,
+            gap: 10,
+            border: "1px solid rgba(78,168,255,0.5)",
+            borderRadius: 999,
+            padding: "10px 24px",
+            fontSize: 22,
+            fontWeight: 600,
+            color: "#4EA8FF",
+            marginBottom: 40,
+            backgroundColor: "rgba(78,168,255,0.08)",
           }}
         >
-          <span>Tip</span>
-          <span>Farcaster creators</span>
-          <span>in USDC on Base</span>
+          <span>⚡ BASE × FARCASTER</span>
         </div>
 
         <div
           style={{
             display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            fontSize: 76,
+            fontWeight: 800,
+            color: "#FFFFFF",
+            textAlign: "center",
+            lineHeight: 1.15,
+            marginBottom: 44,
+          }}
+        >
+          <span>Tip</span>
+          <span>Farcaster creators</span>
+          <span>
+            in <span style={{ color: "#00D67F" }}>USDC</span> on{" "}
+            <span style={{ color: "#4EA8FF" }}>Base</span>
+          </span>
+        </div>
+
+        {/* Flow box with glow border */}
+        <div
+          style={{
+            display: "flex",
             alignItems: "center",
             gap: 20,
-            border: "1px solid rgba(255,255,255,0.25)",
+            border: "1px solid rgba(78,168,255,0.4)",
             borderRadius: 20,
             padding: "28px 48px",
-            fontSize: 36,
+            fontSize: 34,
             fontWeight: 600,
+            backgroundColor: "rgba(255,255,255,0.03)",
+            boxShadow: "0 0 40px rgba(78,168,255,0.25)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <img
               src="https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/0be7c7dc-a482-43cd-7401-43e7db951400/original"
-              width="56"
-              height="56"
-              style={{ borderRadius: "999px" }}
+              width="52"
+              height="52"
+              style={{
+                borderRadius: "999px",
+                border: "2px solid #4EA8FF",
+              }}
             />
             <span style={{ color: "#4EA8FF" }}>@afifarioss</span>
           </div>
 
-          <span style={{ color: "rgba(255,255,255,0.5)" }}>→</span>
-          <span style={{ color: "#FFFFFF" }}>1 USDC</span>
-          <span style={{ color: "rgba(255,255,255,0.5)" }}>→</span>
+          <span style={{ color: "rgba(255,255,255,0.4)" }}>→</span>
+          <span style={{ color: "#00D67F" }}>1 USDC</span>
+          <span style={{ color: "rgba(255,255,255,0.4)" }}>→</span>
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <img
               src="https://i.imgur.com/naZWL9n.gif"
-              width="56"
-              height="56"
-              style={{ borderRadius: "999px" }}
+              width="52"
+              height="52"
+              style={{
+                borderRadius: "999px",
+                border: "2px solid #4EA8FF",
+              }}
             />
             <span style={{ color: "#4EA8FF" }}>@rish</span>
           </div>
@@ -75,10 +109,11 @@ export async function GET() {
 
         <div
           style={{
-            fontSize: 28,
-            color: "rgba(255,255,255,0.55)",
-            marginTop: 48,
+            fontSize: 26,
+            color: "rgba(255,255,255,0.5)",
+            marginTop: 44,
             display: "flex",
+            letterSpacing: "0.5px",
           }}
         >
           No bridge. No gas confusion. Just tip.
