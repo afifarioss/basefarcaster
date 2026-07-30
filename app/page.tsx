@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { isAddress } from "viem";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { Hero } from "@/components/Hero";
 import { TipCard } from "@/components/TipCard";
+import { UsernameInput } from "@/components/UsernameInput";
 import { WalletConnect } from "@/components/WalletConnect";
 import { ProfileCard } from "@/components/ProfileCard";
 import { ShareButton } from "@/components/ShareButton";
@@ -51,6 +52,17 @@ function HomeContent() {
       : DEFAULT_RECIPIENT_WALLET;
   const recipientLabel = labelParam || "the creator";
 
+  // Overrides the URL-based recipient when someone resolves a
+  // @username via the input box. Falls back to the ?to= link
+  // (or default wallet) when nothing has been typed.
+  const [resolvedUser, setResolvedUser] = useState<{
+    address: `0x${string}`;
+    displayName: string;
+  } | null>(null);
+
+  const activeRecipient = resolvedUser?.address ?? recipient;
+  const activeLabel = resolvedUser?.displayName ?? recipientLabel;
+
   useEffect(() => {
     if (!isFrameReady) setFrameReady();
   }, [isFrameReady, setFrameReady]);
@@ -79,8 +91,15 @@ function HomeContent() {
         <div className="mx-auto flex max-w-md flex-col items-center gap-5">
           <ProfileCard />
 
-          <div ref={tipRef} className="w-full">
-            <TipCard recipient={recipient} recipientLabel={recipientLabel} />
+          <div ref={tipRef} className="w-full space-y-3">
+            <UsernameInput
+              onResolve={(user) =>
+                setResolvedUser(
+                  user ? { address: user.address, displayName: `@${user.username}` } : null
+                )
+              }
+            />
+            <TipCard recipient={activeRecipient} recipientLabel={activeLabel} />
           </div>
 
           <ShareButton className="btn-secondary w-full max-w-md" />
