@@ -18,7 +18,7 @@ const spaceGrotesk = Space_Grotesk({
 
 const frameEmbed = {
   version: "next",
-  imageUrl: `${APP_URL}/images/og-image.png`,
+  imageUrl: `${APP_URL}/api/og`,
   button: {
     title: "💙 Open BaseFarCaster",
     action: {
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
     url: APP_URL,
     siteName: APP_NAME,
-    images: [{ url: "/images/og-image.png", width: 1200, height: 630 }],
+    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
