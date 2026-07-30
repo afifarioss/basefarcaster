@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     if (!address) {
       return NextResponse.json(
-        { error: "No verified wallet address for this user" },
+        { error: "No verified wallet address for this user", debug: user.extras },
         { status: 422 }
       );
     }
