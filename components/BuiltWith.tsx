@@ -17,7 +17,7 @@ const STACK = [
   },
   {
     name: "Venice",
-    icon: "/images/built-in-venice-dark.svg",
+    icon: "/images/venice-logo.png",
     blurb:
       "Private, uncensored AI infrastructure. Stake VVV here to unlock Venice Pro alongside your tips.",
     href: "https://venice.ai",

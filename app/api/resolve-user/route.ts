@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const username = req.nextUrl.searchParams.get("username")?.replace(/^@/, "");
+  const username = req.nextUrl.searchParams.get("username")?.replace(/^@/, "").toLowerCase();
 
   if (!username) {
     return NextResponse.json({ error: "Missing username" }, { status: 400 });
