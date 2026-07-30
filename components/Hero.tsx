@@ -3,7 +3,16 @@
 import { TrustBar } from "./TrustBar";
 import { SocialProof } from "./SocialProof";
 
-export function Hero({ onCtaClick }: { onCtaClick: () => void }) {
+export function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
+  const handleCtaClick = () => {
+    if (onCtaClick) {
+      onCtaClick();
+      return;
+    }
+
+    const target = document.getElementById("tip-card");
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   return (
     <section className="relative overflow-hidden px-5 pb-10 pt-14 text-center sm:pt-20">
       <div className="mx-auto max-w-lg">
@@ -34,7 +43,7 @@ export function Hero({ onCtaClick }: { onCtaClick: () => void }) {
         </div>
 
         <div className="mt-8 flex animate-fade-up flex-col items-center gap-3 [animation-delay:240ms]">
-          <button onClick={onCtaClick} className="btn-primary w-full max-w-[280px] !py-4 text-base">
+          <button onClick={handleCtaClick} className="btn-primary w-full max-w-[280px] !py-4 text-base">
             Tip in 10 seconds
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path
