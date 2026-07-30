@@ -6,7 +6,7 @@ import {
   PLATFORM_FEE_WALLET,
   PLATFORM_FEE_BPS,
   FEE_DENOMINATOR,
-} from "@[/lib](https://farcaster.xyz/~/channel/lib)/constants";
+} from "../../../lib/constants";
 
 /**
  * Real social-proof data derived from Base onchain logs.
@@ -27,8 +27,6 @@ const client = createPublicClient({
   transport: http(),
 });
 
-// Keep this small for public RPC reliability.
-// 5,000 Base blocks is roughly 2.5–3 hours.
 const LOOKBACK_BLOCKS = BigInt(5_000);
 const WINDOW_HOURS = 3;
 
@@ -64,8 +62,6 @@ export async function GET() {
       BigInt(0)
     );
 
-    // total tip volume = fee received / fee percentage
-    // Example: 5% fee means total = fee * 10000 / 500
     const totalVolumeUnits =
       (totalFeeUnits * BigInt(FEE_DENOMINATOR)) /
       BigInt(PLATFORM_FEE_BPS);
