@@ -6,61 +6,87 @@ import {
   PLATFORM_FEE_WALLET,
   PLATFORM_FEE_BPS,
   FEE_DENOMINATOR,
-} from "@/lib/constants";
+} from "@[/lib](https://farcaster.xyz/~/channel/lib)/constants";
 
 /**
- * Real social-proof data, derived honestly from the chain: every tip sends
- * a fee-leg transfer to PLATFORM_FEE_WALLET, so counting those transfers
- * (and backing out the fee % to reconstruct total tip volume) gives an
- * accurate recent-activity count with zero fabricated numbers.
+ * Real social-proof data derived from Base onchain logs.
  *
- * This intentionally covers a recent block window, not all-time history —
- * a single eth_getLogs call against a public RPC has range limits. A
- * production deployment with meaningful volume should back this with a
- * proper indexer for full historical totals.
+ * Each BaseZap tip sends a platform-fee USDC transfer to PLATFORM_FEE_WALLET.
+ * We count those fee-leg transfers, then reconstruct total tip volume from
+ * the fee percentage.
+ *
+ * Note: this counts tips and supporters. It does NOT reliably count unique
+ * creators, because the fee transfer alone only tells us the sender and fee
+ * wallet, not the creator recipient.
  */
 
-export const revalidate = 30; // cache for 30s at the edge
+export const revalidate = 30;
 
-const client = createPublicClient({ chain: base, transport: http() });
+const client = createPublicClient({
+  chain: base,
+  transport: http(),
+});
 
-const LOOKBACK_BLOCKS = BigInt(5_000); // ~1 day on Base at ~2s blocks
+// Keep this small for public RPC reliability.
+// 5,000 Base blocks is roughly 2.5–3 hours.
+const LOOKBACK_BLOCKS = BigInt(5_000);
+const WINDOW_HOURS = 3;
 
 export async function GET() {
   try {
     const latest = await client.getBlockNumber();
-    const fromBlock = latest > LOOKBACK_BLOCKS ? latest - LOOKBACK_BLOCKS : BigInt(0);
+
+    const fromBlock =
+      latest > LOOKBACK_BLOCKS ? latest - LOOKBACK_BLOCKS : BigInt(0);
 
     const logs = await client.getLogs({
       address: USDC_ADDRESS,
       event: parseAbiItem(
         "event Transfer(address indexed from, address indexed to, uint256 value)"
       ),
-      args: { to: PLATFORM_FEE_WALLET },
+      args: {
+        to: PLATFORM_FEE_WALLET,
+      },
       fromBlock,
       toBlock: latest,
     });
 
     const tipCount = logs.length;
+
+    const supporters = new Set(
+      logs
+        .map((log) => log.args.from?.toLowerCase())
+        .filter(Boolean)
+    );
+
     const totalFeeUnits = logs.reduce(
       (sum, log) => sum + (log.args.value ?? BigInt(0)),
       BigInt(0)
     );
-    // total = fee / (bps / denominator)
+
+    // total tip volume = fee received / fee percentage
+    // Example: 5% fee means total = fee * 10000 / 500
     const totalVolumeUnits =
-      (totalFeeUnits * BigInt(FEE_DENOMINATOR)) / BigInt(PLATFORM_FEE_BPS);
+      (totalFeeUnits * BigInt(FEE_DENOMINATOR)) /
+      BigInt(PLATFORM_FEE_BPS);
 
     return Response.json({
       tipCount,
       totalVolumeUsdc: Number(formatUnits(totalVolumeUnits, USDC_DECIMALS)),
-      windowHours: 3,
+      supporterCount: supporters.size,
+      windowHours: WINDOW_HOURS,
     });
   } catch (err) {
     console.error("Stats API error:", err);
 
-    // Fail quiet — social proof is a nice-to-have, never block the page.
     return Response.json(
-      { tipCount: 0, totalVolumeUsdc: 0, windowHours: 3, error: true },
+      {
+        tipCount: 0,
+        totalVolumeUsdc: 0,
+        supporterCount: 0,
+        windowHours: WINDOW_HOURS,
+        error: true,
+      },
       { status: 200 }
     );
   }
