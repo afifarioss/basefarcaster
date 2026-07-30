@@ -60,7 +60,7 @@ export const TIP_PRESETS = [0.1, 1, 5] as const;
 export const APP_NAME = "BaseFarCaster";
 export const APP_SHORT_NAME = "BaseZap";
 export const APP_DESCRIPTION =
-  "Tip any Farcaster user with real USDC on Base — one tap, no bridging, no token gymnastics.";
+  "Send USDC tips to any Farcaster creator on Base in seconds. Non-custodial, transparent, and built for builders.";
 export const APP_TAGLINE = "USDC tipping for Farcaster.";
 
 export const APP_URL =
