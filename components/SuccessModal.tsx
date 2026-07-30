@@ -7,11 +7,13 @@ import { formatUsdc } from "@/lib/utils";
 
 export function SuccessModal({
   amount,
+  recipientLabel,
   txHash,
   tokenSymbol = "USDC",
   onClose,
 }: {
   amount: number;
+  recipientLabel: string;
   txHash: string;
   tokenSymbol?: string;
   onClose: () => void;
@@ -47,7 +49,7 @@ export function SuccessModal({
         </div>
 
         <h3 className="mt-5 text-center font-display text-xl font-bold text-white">
-          Tip sent onchain
+          You tipped {recipientLabel} {formatUsdc(amount)} {tokenSymbol}
         </h3>
         <p className="mt-1 text-center text-sm text-white/55">
           {formatUsdc(amount)} {tokenSymbol} delivered on Base. It just
@@ -65,9 +67,10 @@ export function SuccessModal({
 
         <div className="mt-3 flex flex-col gap-2.5">
           <ShareButton
-            text={`Just tipped ${formatUsdc(
+            label="Cast this tip"
+            text={`I just tipped ${recipientLabel} ${formatUsdc(
               amount
-            )} ${tokenSymbol} onchain with BaseFarCaster 💙 Real money, real speed, real Base.`}
+            )} ${tokenSymbol} on Base using BaseZap 💙\n\nSupport Farcaster builders onchain:`}
           />
           <button onClick={onClose} className="btn-primary w-full">
             Done

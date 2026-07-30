@@ -252,6 +252,7 @@ export function TipCard({
 
       {status === "success" && (
         <SuccessModal
+          recipientLabel={recipientLabel}
           amount={amount}
           txHash={txHash}
           tokenSymbol={tokenSymbol}
