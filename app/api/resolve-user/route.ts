@@ -57,3 +57,19 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+// TEMP DEBUG ROUTE — remove after diagnosing the missing-wallet issue
+export async function POST(req: NextRequest) {
+  const username = req.nextUrl.searchParams.get("username") ?? "afifarioss";
+  const res = await fetch(
+    `https://client.warpcast.com/v2/user-by-username?username=${username}`,
+    {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+      },
+    }
+  );
+  const raw = await res.json();
+  return NextResponse.json(raw);
+}
