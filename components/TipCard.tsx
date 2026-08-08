@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAccount, useConnect, useReadContract } from "wagmi";
 // EIP-5792 batched calls are still exposed from wagmi's experimental entry
 // point as of wagmi v2.13. Check the wagmi changelog when upgrading —
@@ -55,6 +55,18 @@ export function TipCard({
   );
   const [txHash, setTxHash] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (status !== "sending" && !isPending) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setElapsedSeconds((s) => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [status, isPending]);
 
   const amount = useMemo(() => {
     if (isCustom) {
@@ -260,6 +272,12 @@ export function TipCard({
           ? `Tip ${formatUsdc(amount)} ${tokenSymbol}`
           : "Connect & Tip"}
       </button>
+
+      {(status === "sending" || isPending) && elapsedSeconds >= 3 && (
+        <p className="mt-3 text-center text-xs text-white/40">
+          Still confirming… this can take a few extra seconds on a busy network.
+        </p>
+      )}
 
       {status === "error" && (
         <p className="mt-3 text-center text-xs text-red-400">{errorMsg}</p>
