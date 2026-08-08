@@ -59,6 +59,7 @@ function HomeContent() {
   const [resolvedUser, setResolvedUser] = useState<{
     address: `0x${string}`;
     displayName: string;
+    fid?: number;
   } | null>(null);
 
   const activeRecipient = resolvedUser?.address ?? recipient;
@@ -101,11 +102,11 @@ function HomeContent() {
             <UsernameInput
               onResolve={(user) =>
                 setResolvedUser(
-                  user ? { address: user.address, displayName: `@${user.username}` } : null
+                  user ? { address: user.address, displayName: `@${user.username}`, fid: user.fid } : null
                 )
               }
             />
-            <TipCard recipient={activeRecipient} recipientLabel={activeLabel} />
+            <TipCard recipient={activeRecipient} recipientLabel={activeLabel} recipientFid={resolvedUser?.fid} />
           </div>
 
           <TrustChecklist />

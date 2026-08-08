@@ -22,9 +22,11 @@ import { SuccessModal } from "./SuccessModal";
 export function TipCard({
   recipient,
   recipientLabel = "this creator",
+  recipientFid,
 }: {
   recipient: `0x${string}`;
   recipientLabel?: string;
+  recipientFid?: number;
 }) {
   const { isConnected } = useAccount();
   const { connectors, connect } = useConnect();
@@ -126,6 +128,19 @@ export function TipCard({
           onSuccess: (data) => {
             setTxHash(data.id);
             setStatus("success");
+              if (recipientFid) {
+                fetch("/api/notify-tip", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    fid: recipientFid,
+                    amount,
+                    tokenSymbol,
+                  }),
+                }).catch(() => {
+                  // Notification is best-effort — never surface this to the tipper.
+                });
+              }
           },
           onError: (err) => {
             setErrorMsg(err.message.split("\n")[0].slice(0, 140));
