@@ -21,6 +21,7 @@ import {
   DEFAULT_RECIPIENT_WALLET,
   PLATFORM_FEE_BPS,
 } from "@/lib/constants";
+import { BetaStats } from "../components/BetaStats";
 
 const STEPS = [
   {
@@ -87,6 +88,7 @@ function HomeContent() {
           tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
         }
       />
+        <BetaStats />
 
       <section className="px-5">
         <div className="mx-auto flex max-w-md flex-col items-center gap-5">
