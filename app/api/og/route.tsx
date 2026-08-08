@@ -2,7 +2,44 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export async function GET() {
+type Recipient = { displayLabel: string; avatarUrl: string };
+
+const DEFAULT_RECIPIENT: Recipient = {
+  displayLabel: "@rish",
+  avatarUrl: "https://i.imgur.com/naZWL9n.gif",
+};
+
+async function resolveRecipient(label: string | null): Promise<Recipient | null> {
+  if (!label) return null;
+  const username = label.replace(/^@/, "").toLowerCase();
+  const apiKey = process.env.NEYNAR_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch(
+      `https://api.neynar.com/v2/farcaster/user/by_username?username=${encodeURIComponent(
+        username
+      )}`,
+      {
+        headers: { accept: "application/json", "x-api-key": apiKey },
+        next: { revalidate: 60 },
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const user = data?.user;
+    if (!user?.pfp_url || !user?.username) return null;
+    return { displayLabel: `@${user.username}`, avatarUrl: user.pfp_url };
+  } catch {
+    return null;
+  }
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const recipient =
+    (await resolveRecipient(searchParams.get("label"))) ?? DEFAULT_RECIPIENT;
+
   return new ImageResponse(
     (
       <div
@@ -95,7 +132,7 @@ export async function GET() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <img
-              src="https://i.imgur.com/naZWL9n.gif"
+              src={recipient.avatarUrl}
               width="52"
               height="52"
               style={{
@@ -103,7 +140,7 @@ export async function GET() {
                 border: "2px solid #4EA8FF",
               }}
             />
-            <span style={{ color: "#4EA8FF" }}>@rish</span>
+            <span style={{ color: "#4EA8FF" }}>{recipient.displayLabel}</span>
           </div>
         </div>
 
