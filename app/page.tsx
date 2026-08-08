@@ -38,7 +38,8 @@ const STEPS = [
 ];
 
 function HomeContent() {
-  const { setFrameReady, isFrameReady } = useMiniKit();
+  const { setFrameReady, isFrameReady, context } = useMiniKit();
+  const isNotificationLaunch = context?.location?.type === "notification";
   const tipRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
 
@@ -86,6 +87,17 @@ function HomeContent() {
         <WalletConnect />
       </header>
 
+      {isNotificationLaunch && (
+        <div className="px-5 pt-2">
+          <div className="mx-auto max-w-md">
+            <p className="mb-3 text-center text-sm font-medium text-white/80">
+              Welcome back — thanks for using BaseZap 💙
+            </p>
+            <ProfileCard />
+          </div>
+        </div>
+      )}
+
       <Hero
         recipientLabel={heroRecipientLabel}
         onCtaClick={() =>
@@ -96,7 +108,7 @@ function HomeContent() {
       <section className="px-5">
         <div className="mx-auto flex max-w-md flex-col items-center gap-5">
           <BetaStats />
-          <ProfileCard />
+          {!isNotificationLaunch && <ProfileCard />}
 
           <div ref={tipRef} className="w-full space-y-3">
             <UsernameInput
