@@ -5,7 +5,7 @@ import { useAccount, useConnect, useReadContract } from "wagmi";
 // EIP-5792 batched calls are still exposed from wagmi's experimental entry
 // point as of wagmi v2.13. Check the wagmi changelog when upgrading —
 // this may move to the root `wagmi` export in a future major version.
-import { useSendCalls } from "wagmi/experimental";
+import { useCapabilities, useSendCalls } from "wagmi/experimental";
 import { encodeFunctionData } from "viem";
 import {
   ERC20_ABI,
@@ -28,9 +28,20 @@ export function TipCard({
   recipientLabel?: string;
   recipientFid?: number;
 }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address, chainId } = useAccount();
   const { connectors, connect } = useConnect();
   const { sendCalls, isPending } = useSendCalls();
+
+  // Detect whether the connected wallet actually supports gas sponsorship
+  // (EIP-5792 paymasterService) before requesting it. Wallets that don't
+  // support it should generally ignore an unsupported capability, but
+  // checking upfront lets us know the real sponsorship state rather than
+  // assuming it's always active.
+  const { data: availableCapabilities } = useCapabilities({ account: address });
+  const paymasterSupported = useMemo(() => {
+    if (!availableCapabilities || !chainId) return false;
+    return availableCapabilities[chainId]?.paymasterService?.supported === true;
+  }, [availableCapabilities, chainId]);
 
   const [tokenSymbol, setTokenSymbol] =
     useState<TippableTokenSymbol>("USDC");
@@ -100,11 +111,13 @@ export function TipCard({
       // falls back to sequential prompts on wallets without batching.
       const calls = [
         {
-          capabilities: {
-            paymasterService: {
-              url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
-            },
-          },
+          capabilities: paymasterSupported
+            ? {
+                paymasterService: {
+                  url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
+                },
+              }
+            : {},
           to: token.address,
           data: encodeFunctionData({
             abi: ERC20_ABI,
@@ -113,11 +126,13 @@ export function TipCard({
           }),
         },
         {
-          capabilities: {
-            paymasterService: {
-              url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
-            },
-          },
+          capabilities: paymasterSupported
+            ? {
+                paymasterService: {
+                  url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
+                },
+              }
+            : {},
           to: token.address,
           data: encodeFunctionData({
             abi: ERC20_ABI,
@@ -130,11 +145,13 @@ export function TipCard({
       sendCalls(
         {
           calls,
-          capabilities: {
-            paymasterService: {
-              url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
-            },
-          },
+          capabilities: paymasterSupported
+            ? {
+                paymasterService: {
+                  url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
+                },
+              }
+            : {},
         },
         {
           onSuccess: (data) => {
