@@ -8,6 +8,7 @@ import { Hero } from "@/components/Hero";
 import { TipCard } from "@/components/TipCard";
 import { UsernameInput } from "@/components/UsernameInput";
 import { TrustChecklist } from "@/components/TrustChecklist";
+import { BetaStats } from "@/components/BetaStats";
 import { WalletConnect } from "@/components/WalletConnect";
 import { ProfileCard } from "@/components/ProfileCard";
 import { ShareButton } from "@/components/ShareButton";
@@ -21,8 +22,6 @@ import {
   DEFAULT_RECIPIENT_WALLET,
   PLATFORM_FEE_BPS,
 } from "@/lib/constants";
-import { BetaStats } from "../components/BetaStats";
-
 const STEPS = [
   {
     title: "Pick an amount",
@@ -88,10 +87,10 @@ function HomeContent() {
           tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
         }
       />
-        <BetaStats />
 
       <section className="px-5">
         <div className="mx-auto flex max-w-md flex-col items-center gap-5">
+          <BetaStats />
           <ProfileCard />
 
           <div ref={tipRef} className="w-full space-y-3">
