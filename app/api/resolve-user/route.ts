@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
       displayName: user.display_name,
       pfpUrl: user.pfp_url,
       address,
+      fid: user.fid,
     });
   } catch (err) {
     return NextResponse.json(

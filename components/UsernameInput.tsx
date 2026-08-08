@@ -7,6 +7,7 @@ type ResolvedUser = {
   displayName: string;
   pfpUrl: string;
   address: `0x${string}`;
+  fid: number;
 };
 
 export function UsernameInput({
