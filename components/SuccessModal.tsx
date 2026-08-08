@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import confetti from "canvas-confetti";
+import { useAccount } from "wagmi";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { ShareButton } from "./ShareButton";
 import { formatUsdc } from "@/lib/utils";
+import { APP_URL } from "@/lib/constants";
 
 export function SuccessModal({
   amount,
@@ -18,6 +21,24 @@ export function SuccessModal({
   tokenSymbol?: string;
   onClose: () => void;
 }) {
+  const { address } = useAccount();
+  const { context } = useMiniKit();
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  async function handleGetTipLink() {
+    if (!address) return;
+    const username = context?.user?.username;
+    const label = username ? `@${username}` : "me";
+    const link = `${APP_URL}?to=${address}&label=${encodeURIComponent(label)}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // clipboard API unavailable — fail silently, button just won't confirm
+    }
+  }
+
   useEffect(() => {
     const fire = () => {
       confetti({
@@ -72,6 +93,13 @@ export function SuccessModal({
               amount
             )} ${tokenSymbol} on Base using BaseZap 💙\n\nSupport Farcaster builders onchain:`}
           />
+          {address && (
+            <button onClick={handleGetTipLink} className="chip w-full !py-2.5 text-xs">
+              {linkCopied
+                ? "Copied! Paste it in a cast 💙"
+                : "Loved tipping? Get your own tip link too"}
+            </button>
+          )}
           <button onClick={onClose} className="btn-primary w-full">
             Done
           </button>
