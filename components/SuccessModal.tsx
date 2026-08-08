@@ -6,7 +6,7 @@ import { useAccount } from "wagmi";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { ShareButton } from "./ShareButton";
 import { formatUsdc } from "@/lib/utils";
-import { APP_URL } from "@/lib/constants";
+import { APP_URL, PLATFORM_FEE_BPS } from "@/lib/constants";
 
 export function SuccessModal({
   amount,
@@ -73,8 +73,9 @@ export function SuccessModal({
           You tipped {recipientLabel} {formatUsdc(amount)} {tokenSymbol}
         </h3>
         <p className="mt-1 text-center text-sm text-white/55">
-          {formatUsdc(amount)} {tokenSymbol} delivered on Base. It just
-          cleared in seconds.
+          {formatUsdc(amount * (1 - PLATFORM_FEE_BPS / 10000))} {tokenSymbol}{" "}
+          delivered on Base ({formatUsdc(amount * (PLATFORM_FEE_BPS / 10000))}{" "}
+          {tokenSymbol} platform fee). It just cleared in seconds.
         </p>
 
         <a
