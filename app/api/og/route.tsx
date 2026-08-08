@@ -49,17 +49,14 @@ async function generateVeniceBackground(prompt: string): Promise<string | null> 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
 
-    const res = await fetch("https://api.venice.ai/api/v1/images/generations", {
+    const res = await fetch("https://api.venice.ai/api/v1/image/generations", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // No model specified — uses Venice's current default image model.
-        // Avoids hardcoding a model ID that could be renamed/deprecated;
-        // per Venice's spec, an invalid model name silently falls back to
-        // default anyway, so specifying nothing is the safer choice.
+        model: "venice-sd35", // required by Venice API, confirmed via live 404 test
         prompt,
         // Venice's documented size presets don't include an exact 1200x800
         // match for this card's aspect ratio — using a wide preset and
