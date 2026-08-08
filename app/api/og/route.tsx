@@ -40,7 +40,10 @@ async function resolveRecipient(label: string | null): Promise<Recipient | null>
 // callers must fall back to the static gradient rather than break the card.
 async function generateVeniceBackground(prompt: string): Promise<string | null> {
   const apiKey = process.env.VENICE_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.error("VENICE: missing VENICE_API_KEY env var");
+    return null;
+  }
 
   try {
     const controller = new AbortController();
@@ -69,14 +72,22 @@ async function generateVeniceBackground(prompt: string): Promise<string | null> 
     });
 
     clearTimeout(timeout);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`VENICE: API returned ${res.status}: ${errText.slice(0, 300)}`);
+      return null;
+    }
 
     const data = await res.json();
     const b64 = data?.data?.[0]?.b64_json;
-    if (!b64) return null;
+    if (!b64) {
+      console.error("VENICE: no b64_json in response:", JSON.stringify(data).slice(0, 300));
+      return null;
+    }
 
     return `data:image/png;base64,${b64}`;
-  } catch {
+  } catch (err) {
+    console.error("VENICE: threw exception:", err instanceof Error ? err.message : String(err));
     return null;
   }
 }
