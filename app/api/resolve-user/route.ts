@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const username = req.nextUrl.searchParams.get("username")?.replace(/^@/, "").toLowerCase();
+  const usernameParam = req.nextUrl.searchParams
+    .get("username")
+    ?.replace(/^@/, "")
+    .toLowerCase();
+  const fidParam = req.nextUrl.searchParams.get("fid");
 
-  if (!username) {
-    return NextResponse.json({ error: "Missing username" }, { status: 400 });
+  if (!usernameParam && !fidParam) {
+    return NextResponse.json(
+      { error: "Missing username or fid" },
+      { status: 400 }
+    );
   }
 
   const apiKey = process.env.NEYNAR_API_KEY;
@@ -16,25 +23,49 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/by_username?username=${encodeURIComponent(
-        username
-      )}`,
-      {
-        headers: {
-          accept: "application/json",
-          "x-api-key": apiKey,
-        },
-        next: { revalidate: 60 },
+    let user;
+
+    if (fidParam) {
+      const res = await fetch(
+        `https://api.neynar.com/v2/farcaster/user/bulk?fids=${encodeURIComponent(
+          fidParam
+        )}`,
+        {
+          headers: {
+            accept: "application/json",
+            "x-api-key": apiKey,
+          },
+          next: { revalidate: 60 },
+        }
+      );
+
+      if (!res.ok) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
-    );
 
-    if (!res.ok) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      const data = await res.json();
+      user = data?.users?.[0];
+    } else {
+      const res = await fetch(
+        `https://api.neynar.com/v2/farcaster/user/by_username?username=${encodeURIComponent(
+          usernameParam!
+        )}`,
+        {
+          headers: {
+            accept: "application/json",
+            "x-api-key": apiKey,
+          },
+          next: { revalidate: 60 },
+        }
+      );
+
+      if (!res.ok) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      const data = await res.json();
+      user = data?.user;
     }
-
-    const data = await res.json();
-    const user = data?.user;
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
