@@ -19,7 +19,7 @@ export async function GET() {
     buttonTitle: "💙 Send a Tip",
     splashImageUrl: `${APP_URL}/images/splash.png`,
     splashBackgroundColor: "#0A0A0A",
-    webhookUrl: `${APP_URL}/api/webhook`,
+    webhookUrl: "https://api.neynar.com/f/app/ecf2dc4f-caa0-494a-a9e9-a52c5f24f5f3/event",
     subtitle: "Real USDC tips on Base",
     description: APP_DESCRIPTION,
     primaryCategory: "finance",
