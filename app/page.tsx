@@ -63,6 +63,9 @@ function HomeContent() {
 
   const activeRecipient = resolvedUser?.address ?? recipient;
   const activeLabel = resolvedUser?.displayName ?? recipientLabel;
+  // Only a real, resolved recipient — never the "the creator" fallback —
+  // is allowed to override the Hero headline.
+  const heroRecipientLabel = resolvedUser?.displayName ?? labelParam;
 
   useEffect(() => {
     if (!isFrameReady) setFrameReady();
@@ -83,6 +86,7 @@ function HomeContent() {
       </header>
 
       <Hero
+        recipientLabel={heroRecipientLabel}
         onCtaClick={() =>
           tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
         }

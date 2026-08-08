@@ -3,7 +3,13 @@
 import { TrustBar } from "./TrustBar";
 import { SocialProof } from "./SocialProof";
 
-export function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
+export function Hero({
+  onCtaClick,
+  recipientLabel,
+}: {
+  onCtaClick?: () => void;
+  recipientLabel?: string | null;
+}) {
   const handleCtaClick = () => {
     if (onCtaClick) {
       onCtaClick();
@@ -24,16 +30,28 @@ export function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
         </div>
 
         <h1 className="mt-6 animate-fade-up font-display text-[2.4rem] font-bold leading-[1.08] tracking-tight text-white [animation-delay:80ms] sm:text-5xl">
-          Send real USDC
-          <br />
-          <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
-            to any Farcaster user.
-          </span>
+          {recipientLabel ? (
+            <>
+              Tip{" "}
+              <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
+                {recipientLabel}
+              </span>
+            </>
+          ) : (
+            <>
+              Send real USDC
+              <br />
+              <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
+                to any Farcaster user.
+              </span>
+            </>
+          )}
         </h1>
 
         <p className="mx-auto mt-5 max-w-sm animate-fade-up text-[17px] leading-relaxed text-white/55 [animation-delay:160ms]">
-          One tap, no gas, no guesswork. Funds land in ~2 seconds —
-          verified onchain, every time.
+          {recipientLabel
+            ? "One tap, no gas, no guesswork. Your tip lands in ~2 seconds, verified onchain."
+            : "One tap, no gas, no guesswork. Funds land in ~2 seconds — verified onchain, every time."}
         </p>
 
         {/* Trust bar — token, chain, fee, and settlement time, all visible
