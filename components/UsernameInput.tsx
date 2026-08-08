@@ -41,7 +41,17 @@ export function UsernameInput({
 
         if (!res.ok) {
           setStatus("error");
-          setErrorMsg(data.error || "User not found");
+          if (res.status === 404) {
+            setErrorMsg(
+              "Couldn't find that user — check the exact spelling, or paste their profile link."
+            );
+          } else if (res.status === 422) {
+            setErrorMsg(
+              "This user hasn't connected a wallet to Farcaster yet."
+            );
+          } else {
+            setErrorMsg(data.error || "Something went wrong looking that up.");
+          }
           setResolved(null);
           onResolve(null);
           return;
