@@ -40,10 +40,10 @@ export function Hero({
             </>
           ) : (
             <>
-              Show them they matter.
+              Tip Farcaster users
               <br />
               <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
-                Instantly.
+                with USDC on Base.
               </span>
             </>
           )}
@@ -52,7 +52,7 @@ export function Hero({
         <p className="mx-auto mt-5 max-w-sm animate-fade-up text-[17px] leading-relaxed text-white/55 [animation-delay:160ms]">
           {recipientLabel
             ? "Send them USDC on Base — they'll see it instantly. Verified onchain, ~2 seconds."
-            : "Real USDC on Base. No bridge, no gas confusion. Verified onchain, ~2 seconds."}
+            : "Paste a username or cast link, choose an amount, and zap them instantly."}
         </p>
 
         {/* Trust bar — token, chain, fee, and settlement time, all visible
@@ -63,7 +63,7 @@ export function Hero({
 
         <div className="mt-8 flex animate-fade-up flex-col items-center gap-3 [animation-delay:240ms]">
           <button onClick={handleCtaClick} className="btn-primary w-full max-w-[280px] !py-4 text-base">
-            {recipientLabel ? `Tip ${recipientLabel}` : "Tip in 10 seconds"}
+            {recipientLabel ? `Tip ${recipientLabel}` : "Zap someone now"}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 12h14M13 6l6 6-6 6"
