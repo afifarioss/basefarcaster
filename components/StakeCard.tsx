@@ -127,10 +127,11 @@ export function StakeCard() {
             : {},
         },
         {
-          onSuccess: (id) => {
-            setCallsId(id);
+          onSuccess: (data) => {
+            setCallsId(data.id);
+            setStatus("sending");
           },
-          onError: (err: any) => {
+          onError: (err: Error) => {
             setStatus("error");
             setErrorMsg(err?.message || "Staking failed");
           },
