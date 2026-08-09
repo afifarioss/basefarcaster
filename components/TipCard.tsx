@@ -58,7 +58,7 @@ export function TipCard({
   });
   const decimals = token.decimals ?? fetchedDecimals ?? 18;
 
-  const [selected, setSelected] = useState<number>(TIP_PRESETS[1]);
+  const [selected, setSelected] = useState<number>(TIP_PRESETS[2]);
   const [custom, setCustom] = useState("");
   const [isCustom, setIsCustom] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">(
@@ -213,7 +213,7 @@ export function TipCard({
         ))}
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-4 gap-2">
         {TIP_PRESETS.map((preset) => (
           <button
             key={preset}

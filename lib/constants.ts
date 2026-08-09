@@ -55,7 +55,7 @@ export const DEFAULT_RECIPIENT_WALLET =
   "0x000000000000000000000000000000000000dEaD";
 
 /** Preset tip amounts shown as quick-select chips, in USDC. */
-export const TIP_PRESETS = [0.1, 1, 5] as const;
+export const TIP_PRESETS = [0.1, 0.5, 1, 5] as const;
 
 export const APP_NAME = "BaseZap";
 export const APP_SHORT_NAME = "BaseZap";
