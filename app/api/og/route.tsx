@@ -58,8 +58,8 @@ async function generateVeniceBackground(prompt: string): Promise<string | null> 
       body: JSON.stringify({
         model: "venice-sd35", // required by Venice API, confirmed via live 404 test
         prompt,
-        width: 1792,
-        height: 1024,
+        width: 1280,
+        height: 832,
         format: "png",
       }),
       signal: controller.signal,
