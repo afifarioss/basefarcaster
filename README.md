@@ -1,8 +1,8 @@
 <div align="center">
 
-# 💙 BaseFarCaster
+# ⚡ BaseZap
 
-**Real USDC tips on Base — one tap, ~2 second settlement, native inside Farcaster.**
+**Instant USDC funding for Farcaster builders — one tap, ~2 second settlement, native inside Farcaster.**
 
 [
 
@@ -39,42 +39,52 @@ just written down.
 
 | Feature | Status |
 |---|---|
-| Core USDC tipping, batched fee split | ✅ Live on Base Mainnet |
+| Core USDC tipping, batched fee split | ✅ Live on Base Mainnet, confirmed with real funds |
+| Tip from username or pasted cast link | ✅ Live |
+| Native "Cast this zap" share loop (`composeCast`) | ✅ Live |
+| Recent zaps feed (onchain, identity-resolved) | ✅ Live |
 | Base / Farcaster / Venice attribution | ✅ Live, official brand assets |
-| CDP Paymaster (gasless tipping) | ✅ Deployed — awaiting first real-funds confirmation on Basescan |
-| VVV staking (approve → stake) | ✅ Deployed against the verified [sVVV contract](https://basescan.org/address/0x321b7ff75154472B18EDb199033fF4D116F340Ff) — awaiting first real-funds confirmation |
-| BaseZap — Mini App launcher name | ✅ Live |
+| CDP Paymaster (gasless tipping) | ✅ Live — confirmed sponsored on real transactions |
+| VVV staking (approve → stake) | ✅ Deployed against the verified [sVVV contract](https://basescan.org/address/0x321b7ff75154472B18EDb199033fF4D116F340Ff) |
+| Push notifications on tip received | ⚙️ Wired end-to-end via Neynar-managed webhook — pending first real-world confirmation |
 
 ---
 
 ## What is this
 
-Farcaster's social graph rewards good content with likes and recasts — but none
-of that carries real economic value back to the person who made it. Existing
-tipping tools either force creators to hold volatile tokens they didn't
-choose, or live outside the feed entirely, bleeding conversion at every
-click-through.
+Farcaster's social graph rewards good building and good casts with likes and
+recasts — but none of that carries real economic value back to the builder
+who made it. Existing tipping tools either force people to hold volatile
+tokens they didn't choose, or live outside the feed entirely, bleeding
+conversion at every click-through.
 
-**BaseFarCaster fixes that.** It's a Farcaster Mini App that opens inline,
-inside the client, and lets anyone send a real, stable, onchain USDC tip in
-one wallet confirmation — no bridging, no gas guesswork, no context-switch.
-tip $1 USDC  →  95% to the creator, 5% platform fee, both legs batched
+**BaseZap fixes that for builders specifically.** It's a Farcaster Mini App
+that opens inline, inside the client, and lets anyone fund a builder with a
+real, stable, onchain USDC tip in one wallet confirmation — no bridging, no
+gas guesswork, no context-switch. Paste a username or a cast link, pick an
+amount, done.
+tip $1 USDC  →  95% to the builder, 5% platform fee, both legs batched
 →  confirmed in ~2 seconds  →  <$0.01 network cost
 ---
 
 ## Features
 
-- 🪙 **Real USDC tipping on Base** — `$0.10` / `$1` / `$5` presets, or any
-  custom amount
+- ⚡ **Fund a builder directly** — `$0.10` / `$0.50` / `$1` / `$5` presets,
+  or any custom amount, sent straight to their wallet
+- 🔗 **Tip from a username or a pasted cast link** — paste a
+  `farcaster.xyz`/`warpcast.com` cast URL and BaseZap resolves the author
+  automatically, no manual lookup needed
 - 🪙 **VVV as a secondary tip currency** — [Venice AI](https://venice.ai)'s
   verified token on Base, offered as an option alongside USDC (not the
   default — this stays a USDC-first app)
 - 🥩 **VVV staking** — approve → stake flow wired directly to Venice's
   real, verified sVVV contract on Base. Stake 100 VVV to unlock Venice Pro.
-- ⚡ **Gasless tipping** — CDP Paymaster integration sponsors gas for
-  Base Smart Wallet users
-- 🔗 **Personalized tip links** — `?to=0x...&label=name` tips a specific
-  creator directly, no fixed single recipient required
+- ⚡ **Gasless tipping** — CDP Paymaster sponsors gas for Base Smart Wallet
+  users, confirmed sponsored on real onchain transactions
+- 🔗 **Personalized tip links** — `?to=0x...&label=name` funds a specific
+  builder directly, no fixed single recipient required
+- 📊 **Recent zaps feed** — real onchain tips, correlated from Base logs and
+  resolved to Farcaster identities via Neynar, shown live on the homepage
 - 🧾 **Automatic 5% platform fee**, split onchain in the same batched
   transaction as the tip itself — exact-sum math, no rounding drift
 - 👛 **Every major wallet, out of the box** — Base Smart Wallet, Coinbase
@@ -82,14 +92,14 @@ tip $1 USDC  →  95% to the creator, 5% platform fee, both legs batched
   MetaMask, Rainbow, and any other injected EIP-1193 wallet
 - 🪪 **Native Farcaster identity** — shows the connected user's FID,
   username, and avatar when running inside a Farcaster client
-- 🎉 **Success state with confetti** + a one-tap "Share on Farcaster" loop
-  that turns every tip into free distribution
+- 🎉 **Native post-tip share loop** — "Cast this zap" fires
+  `sdk.actions.composeCast` directly inside Farcaster clients, turning
+  every tip into free distribution
 - 🌓 **Premium dark UI** — true-black background, Base Blue accents, soft
   glassmorphism, glow-on-hover primary actions
 - 📄 **Correct, current Mini App manifest** — served dynamically from
-  `/.well-known/farcaster.json` using `@farcaster/miniapp-sdk`, with a
-  webhook stub wired up for lifecycle events (`frame_added`,
-  `notifications_enabled`, etc.), launcher name **BaseZap**
+  `/.well-known/farcaster.json`, with a real Neynar-managed webhook wired
+  for lifecycle events and tip notifications
 
 ---
 
@@ -102,9 +112,10 @@ tip $1 USDC  →  95% to the creator, 5% platform fee, both legs batched
 | Farcaster SDK | **`@farcaster/miniapp-sdk`** + **`@farcaster/miniapp-wagmi-connector`** | Current (non-legacy) Farcaster Mini App standard |
 | Onchain | **wagmi + viem** | Type-safe contract calls, EIP-5792 batched transactions |
 | Gas sponsorship | **CDP Paymaster** | Sponsors gas for Base Smart Wallet tippers |
+| Identity | **Neynar API** | Username/cast-link resolution, batch address→identity lookup for the zaps feed |
 | Styling | **Tailwind CSS** | Fast iteration on a tightly-scoped design system |
 | Chain | **Base Mainnet** | Sub-cent fees make sub-$1 tips economically viable |
-| Token | **Native USDC** (`0x8335…a913`) | Stable-denominated, no volatility for creators |
+| Token | **Native USDC** (`0x8335…a913`) | Stable-denominated, no volatility for builders |
 
 ---
 
@@ -122,26 +133,33 @@ tip $1 USDC  →  95% to the creator, 5% platform fee, both legs batched
 basefarcaster/
 ├── app/
 │   ├── .well-known/farcaster.json/route.ts   # Mini App manifest (dynamic, env-driven)
-│   ├── api/webhook/route.ts                  # Farcaster lifecycle events
+│   ├── api/resolve-user/route.ts             # Username/FID → Farcaster identity + address
+│   ├── api/recent-zaps/route.ts              # Correlates onchain tip legs, resolves identities
+│   ├── api/notify-tip/route.ts               # Fires tip-received notification via Neynar webhook
+│   ├── api/stats/route.ts                    # Aggregate tip/volume/supporter stats
+│   ├── share/route.ts                        # Share Extension entry point (cast → resolve → tip)
 │   ├── layout.tsx                            # Root layout + fc:frame / fc:miniapp embed meta
-│   ├── page.tsx                              # Home: hero, tip flow, how-it-works, footer
+│   ├── page.tsx                              # Home: hero, tip flow, recent zaps, how-it-works
 │   ├── providers.tsx                         # wagmi + OnchainKit + MiniKit setup
 │   └── globals.css                           # Dark theme + design tokens
 ├── components/
-│   ├── Hero.tsx            # 3-second-rule hero section
+│   ├── Hero.tsx            # 3-second-rule hero: why, what, how, CTA
 │   ├── TipCard.tsx         # Amount select, live fee breakdown, batched send, paymaster
+│   ├── UsernameInput.tsx   # Username or cast-link input, resolves to a recipient
+│   ├── RecentZaps.tsx      # Live feed of recent onchain tips, empty-state CTA
 │   ├── StakeCard.tsx       # VVV approve → stake flow
 │   ├── TrustBar.tsx        # Token / chain / fee / settlement chips
+│   ├── TrustChecklist.tsx  # Why-you-can-trust-this list
 │   ├── VeniceAttribution.tsx  # Base / Farcaster / Venice badge row
 │   ├── VeniceProStatus.tsx # Live sVVV balance + Pro-unlock status
 │   ├── BuiltWith.tsx       # Base / Farcaster / Venice story section
-│   ├── SuccessModal.tsx    # Confetti + share-on-success
+│   ├── SuccessModal.tsx    # Confetti + "Cast this zap" native share
 │   ├── WalletConnect.tsx   # Multi-wallet connect menu
 │   ├── ProfileCard.tsx     # FID / username / avatar (Farcaster context)
-│   ├── ShareButton.tsx     # Native Warpcast compose via sdk.actions.openUrl
+│   ├── ShareButton.tsx     # Generic Warpcast compose-intent share (separate from composeCast)
 │   └── Footer.tsx
 ├── lib/
-│   ├── constants.ts   # Fee wallet, USDC/VVV/sVVV addresses, tip presets
+│   ├── constants.ts   # Fee wallet, USDC/VVV/sVVV addresses, tip presets, app copy
 │   └── utils.ts       # Exact-sum fee-split math, formatting, share URLs
 ├── public/images/     # icon, splash, OG, screenshot, brand-asset SVGs
 ├── GRANT_STRATEGY.md  # Base grant pitch, roadmap, metrics
@@ -159,17 +177,21 @@ cp .env.example .env.local
 Variable
 What it's for
 NEXT_PUBLIC_ONCHAINKIT_API_KEY
-Free key from Coinbase Developer Platform → Client API key (not a secret trading key)
+Free key from Coinbase Developer Platform → Client API key
 NEXT_PUBLIC_PAYMASTER_URL
 CDP Paymaster endpoint — sponsors gas for Base Smart Wallet tips
 NEXT_PUBLIC_FEE_WALLET
-Wallet that receives the 5% platform fee — ships as a placeholder burn address, change before going live
+Wallet that receives the 5% platform fee
 NEXT_PUBLIC_DEFAULT_RECIPIENT
-Wallet tips are sent to — swap for a per-profile address in production
+Fallback wallet when no ?to= or resolved recipient is set
+NEYNAR_API_KEY
+Username/cast-link resolution, identity lookups for the zaps feed, tip notifications
+VENICE_API_KEY
+OG image background generation
 NEXT_PUBLIC_URL
 Your deployed domain, no trailing slash
 FARCASTER_HEADER / FARCASTER_PAYLOAD / FARCASTER_SIGNATURE
-Server-only — generated by Warpcast, see step 4
+Server-only — generated by Warpcast, see step 5
 3. Run locally
 npm run dev
 Outside a Farcaster client the app runs as a normal web app — wallet
@@ -198,15 +220,18 @@ Every tip is two USDC transfers, batched into a single wallet
 confirmation via wagmi's sendCalls (EIP-5792) on wallets that support
 it — Base Smart Wallet and the Farcaster wallet both do. Wallets without
 batching support fall back to two sequential prompts.
-tip amount × 95%  →  creator wallet
-tip amount × 5%  →  platform fee wallet
+tip amount × 95%  →  builder's wallet
+tip amount × 5%   →  platform fee wallet
 Computed in lib/utils.ts#splitTipAmount using integer USDC base units (6
 decimals), so the two legs always sum exactly back to the original amount —
 no rounding drift. Change the percentage via PLATFORM_FEE_BPS in
 lib/constants.ts (basis points; 500 = 5%).
 Base Smart Wallet users additionally get sponsored gas via CDP
 Paymaster — the batched call above includes a capabilities.paymasterService
-config, so the tip itself is the only cost.
+config, so the tip itself is the only cost. Since sendCalls returns a
+bundle ID rather than a transaction hash, /api/recent-zaps and the
+post-tip Basescan link both resolve the real transaction hash via
+useCallsStatus before linking out.
 Wallet support
 Wallet
 Connector
@@ -224,12 +249,11 @@ Rainbow & others
 injected()
 Catches any EIP-1193 provider in the browser
 Roadmap
-See GRANT_STRATEGY.md for the full 3-month plan.
-Short version:
-[ ] Per-FID recipient resolution (tip any creator, not one fixed wallet)
-[ ] Push notifications on tip received (webhook stub already scaffolded)
+See GRANT_STRATEGY.md for the full plan. Short version:
+[ ] Confirm push notifications end-to-end with a real "Add Mini App" + tip
+[ ] Campaign/ritual mode (e.g. weekly builder-funding prompt)
 [ ] Cast actions — tip directly from the feed, no Mini App open required
-[ ] Public leaderboard / creator profile pages
+[ ] Public builder profile pages (beyond the recent zaps feed)
 [ ] Recurring / subscription tips
 [ ] Full VVV unstake + claim UI (approve → stake shipped; unstake next)
 Contributing
