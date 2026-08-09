@@ -5,7 +5,7 @@ import { useAccount, useConnect, useReadContract } from "wagmi";
 // EIP-5792 batched calls are still exposed from wagmi's experimental entry
 // point as of wagmi v2.13. Check the wagmi changelog when upgrading —
 // this may move to the root `wagmi` export in a future major version.
-import { useCapabilities, useSendCalls } from "wagmi/experimental";
+import { useCallsStatus, useCapabilities, useSendCalls } from "wagmi/experimental";
 import { encodeFunctionData } from "viem";
 import {
   ERC20_ABI,
@@ -31,6 +31,19 @@ export function TipCard({
   const { isConnected, address, chainId } = useAccount();
   const { connectors, connect } = useConnect();
   const { sendCalls, isPending } = useSendCalls();
+  const [callsId, setCallsId] = useState<string | undefined>(undefined);
+  // Resolves the EIP-5792 bundle ID into a real onchain transaction hash —
+  // sendCalls only gives back a bundle id (data.id), not a tx hash, and
+  // that bundle id is NOT a valid Basescan link on its own.
+  const { data: callsStatus } = useCallsStatus({
+    id: callsId as string,
+    query: {
+      enabled: !!callsId,
+      refetchInterval: (query) =>
+        query.state.data?.status === "success" ? false : 1000,
+    },
+  });
+  const resolvedTxHash = callsStatus?.receipts?.[0]?.transactionHash;
 
   // Detect whether the connected wallet actually supports gas sponsorship
   // (EIP-5792 paymasterService) before requesting it. Wallets that don't
@@ -64,7 +77,6 @@ export function TipCard({
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">(
     "idle"
   );
-  const [txHash, setTxHash] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -155,7 +167,7 @@ export function TipCard({
         },
         {
           onSuccess: (data) => {
-            setTxHash(data.id);
+            setCallsId(data.id);
             setStatus("success");
               if (recipientFid) {
                 fetch("/api/notify-tip", {
@@ -304,7 +316,7 @@ export function TipCard({
         <SuccessModal
           recipientLabel={recipientLabel}
           amount={amount}
-          txHash={txHash}
+          txHash={resolvedTxHash}
           tokenSymbol={tokenSymbol}
           onClose={() => setStatus("idle")}
         />

@@ -18,7 +18,7 @@ export function SuccessModal({
 }: {
   amount: number;
   recipientLabel: string;
-  txHash: string;
+  txHash?: string;
   tokenSymbol?: string;
   onClose: () => void;
 }) {
@@ -90,14 +90,20 @@ export function SuccessModal({
           {tokenSymbol} platform fee). It just cleared in seconds.
         </p>
 
-        <a
-          href={`https://basescan.org/tx/${txHash}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-5 block truncate rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-center text-xs font-medium text-base-blueLight hover:bg-white/[0.06]"
-        >
-          View on Basescan ↗
-        </a>
+        {txHash ? (
+          <a
+            href={`https://basescan.org/tx/${txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 block truncate rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-center text-xs font-medium text-base-blueLight hover:bg-white/[0.06]"
+          >
+            View on Basescan ↗
+          </a>
+        ) : (
+          <div className="mt-5 block truncate rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-center text-xs font-medium text-white/40">
+            Confirming on Basescan…
+          </div>
+        )}
 
         <div className="mt-3 flex flex-col gap-2.5">
           <button onClick={handleCastZap} className="btn-secondary w-full">
