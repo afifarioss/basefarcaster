@@ -12,6 +12,7 @@ import { BetaStats } from "@/components/BetaStats";
 import { WalletConnect } from "@/components/WalletConnect";
 import { ProfileCard } from "@/components/ProfileCard";
 import { ShareButton } from "@/components/ShareButton";
+import { RecentZaps } from "@/components/RecentZaps";
 import { VeniceAttribution } from "@/components/VeniceAttribution";
 import { VeniceProStatus } from "@/components/VeniceProStatus";
 import { StakeCard } from "@/components/StakeCard";
@@ -122,6 +123,7 @@ function HomeContent() {
           </div>
 
           <TrustChecklist />
+            <RecentZaps onCtaClick={() => tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })} />
           <ShareButton className="btn-secondary w-full max-w-md" />
           <VeniceAttribution />
           <VeniceProStatus />
