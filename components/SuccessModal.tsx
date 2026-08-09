@@ -92,12 +92,12 @@ export function SuccessModal({
             label="Cast this tip"
             text={`I just tipped ${recipientLabel} ${formatUsdc(
               amount
-            )} ${tokenSymbol} on Base using BaseZap 💙\n\nSupport Farcaster builders onchain:`}
+            )} ${tokenSymbol} on Base using BaseZap ⚡\n\nSupport Farcaster builders onchain:`}
           />
           {address && (
             <button onClick={handleGetTipLink} className="chip w-full !py-2.5 text-xs">
               {linkCopied
-                ? "Copied! Paste it in a cast 💙"
+                ? "Copied! Paste it in a cast ⚡"
                 : "Loved tipping? Get your own tip link too"}
             </button>
           )}

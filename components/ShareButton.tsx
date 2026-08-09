@@ -7,7 +7,7 @@ import { buildShareUrl } from "@/lib/utils";
 import { APP_URL } from "@/lib/constants";
 
 export function ShareButton({
-  text = "I just sent a real USDC tip onchain with BaseFarCaster 💙",
+  text = "I just sent a real USDC tip onchain with BaseZap ⚡",
   className = "",
   label = "Share on Farcaster",
 }: {

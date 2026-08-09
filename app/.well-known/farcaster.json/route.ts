@@ -16,7 +16,7 @@ export async function GET() {
     iconUrl: `${APP_URL}/api/icon`,
     homeUrl: APP_URL,
     imageUrl: `${APP_URL}/api/og`,
-    buttonTitle: "💙 Send a Tip",
+    buttonTitle: "⚡ Send a Tip",
     splashImageUrl: `${APP_URL}/images/splash.png`,
     splashBackgroundColor: "#0A0A0A",
     webhookUrl: "https://api.neynar.com/f/app/ecf2dc4f-caa0-494a-a9e9-a52c5f24f5f3/event",

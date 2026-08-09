@@ -91,7 +91,7 @@ function HomeContent() {
         <div className="px-5 pt-2">
           <div className="mx-auto max-w-md">
             <p className="mb-3 text-center text-sm font-medium text-white/80">
-              Welcome back — thanks for using BaseZap 💙
+              Welcome back — thanks for using BaseZap ⚡
             </p>
             <ProfileCard />
           </div>

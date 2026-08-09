@@ -20,7 +20,7 @@ const frameEmbed = {
   version: "next",
   imageUrl: `${APP_URL}/api/og`,
   button: {
-    title: "💙 Open BaseFarCaster",
+    title: "⚡ Open BaseZap",
     action: {
       type: "launch_frame",
       name: APP_NAME,

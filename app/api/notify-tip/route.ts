@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         target_fids: [fid],
         notification: {
-          title: "You got tipped 💙",
+          title: "You got tipped ⚡",
           body: `Someone sent you ${amount} ${tokenSymbol} on BaseZap`,
           target_url: "https://basefarcaster.vercel.app",
           uuid: crypto.randomUUID(),

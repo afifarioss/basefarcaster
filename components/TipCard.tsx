@@ -274,7 +274,7 @@ export function TipCard({
       </div>
 
       <p className="mt-3 text-center text-[11px] leading-relaxed text-white/35">
-        A {PLATFORM_FEE_BPS / 100}% platform fee supports BaseFarCaster and
+        A {PLATFORM_FEE_BPS / 100}% platform fee supports BaseZap and
         keeps tipping free to build on.
       </p>
 
