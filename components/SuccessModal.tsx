@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import confetti from "canvas-confetti";
 import { useAccount } from "wagmi";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { sdk } from "@farcaster/miniapp-sdk";
 import { ShareButton } from "./ShareButton";
 import { formatUsdc } from "@/lib/utils";
 import { APP_URL, PLATFORM_FEE_BPS } from "@/lib/constants";
@@ -24,6 +25,17 @@ export function SuccessModal({
   const { address } = useAccount();
   const { context } = useMiniKit();
   const [linkCopied, setLinkCopied] = useState(false);
+
+  async function handleCastZap() {
+    try {
+      await sdk.actions.composeCast({
+        text: `I just zapped ${recipientLabel} ${formatUsdc(amount)} ${tokenSymbol} on BaseZap ⚡\n\nTip good casts, not just like them.`,
+        embeds: [APP_URL],
+      });
+    } catch {
+      // Composer unavailable or user cancelled — nothing to recover, just drop it.
+    }
+  }
 
   async function handleGetTipLink() {
     if (!address) return;
@@ -88,12 +100,9 @@ export function SuccessModal({
         </a>
 
         <div className="mt-3 flex flex-col gap-2.5">
-          <ShareButton
-            label="Cast this tip"
-            text={`I just tipped ${recipientLabel} ${formatUsdc(
-              amount
-            )} ${tokenSymbol} on Base using BaseZap ⚡\n\nSupport Farcaster builders onchain:`}
-          />
+          <button onClick={handleCastZap} className="btn-secondary w-full">
+            Cast this zap
+          </button>
           {address && (
             <button onClick={handleGetTipLink} className="chip w-full !py-2.5 text-xs">
               {linkCopied
