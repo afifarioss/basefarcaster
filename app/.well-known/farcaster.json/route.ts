@@ -1,4 +1,4 @@
-import { APP_NAME, APP_SHORT_NAME, APP_DESCRIPTION, APP_URL } from "@/lib/constants";
+import { APP_NAME, APP_SHORT_NAME, APP_DESCRIPTION, APP_TAGLINE, APP_URL } from "@/lib/constants";
 
 /**
  * Farcaster Mini App manifest.
@@ -16,19 +16,19 @@ export async function GET() {
     iconUrl: `${APP_URL}/api/icon`,
     homeUrl: APP_URL,
     imageUrl: `${APP_URL}/api/og`,
-    buttonTitle: "⚡ Send a Tip",
+    buttonTitle: "⚡ Zap someone now",
     splashImageUrl: `${APP_URL}/images/splash.png`,
     splashBackgroundColor: "#0A0A0A",
     webhookUrl: "https://api.neynar.com/f/app/ecf2dc4f-caa0-494a-a9e9-a52c5f24f5f3/event",
     castShareUrl: `${APP_URL}/share`,
-    subtitle: "Real USDC tips on Base",
+    subtitle: "Reward good casts with USDC",
     description: APP_DESCRIPTION,
     primaryCategory: "finance",
     tags: ["base", "usdc", "tipping", "payments", "onchain"],
-    tagline: "Tip creators in USDC on Base",
+    tagline: APP_TAGLINE,
     screenshotUrls: [`${APP_URL}/images/screenshot-1.png`],
     heroImageUrl: `${APP_URL}/api/og`,
-    ogTitle: `${APP_SHORT_NAME}: USDC Tips on Base`,
+    ogTitle: `${APP_SHORT_NAME}: Zap USDC on Base`,
     ogDescription: APP_DESCRIPTION,
     ogImageUrl: `${APP_URL}/api/og`,
     noindex: false,

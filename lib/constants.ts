@@ -60,8 +60,8 @@ export const TIP_PRESETS = [0.1, 0.5, 1, 5] as const;
 export const APP_NAME = "BaseZap";
 export const APP_SHORT_NAME = "BaseZap";
 export const APP_DESCRIPTION =
-  "Send USDC tips to any Farcaster creator on Base in seconds. Non-custodial, transparent, and built for builders.";
-export const APP_TAGLINE = "USDC tipping for Farcaster.";
+  "Reward good Farcaster casts with real USDC on Base. Paste a username or cast link, pick an amount, and zap them instantly — non-custodial, ~2 seconds.";
+export const APP_TAGLINE = "Tip Farcaster users with USDC on Base.";
 
 export const APP_URL =
   process.env.NEXT_PUBLIC_URL || "https://basefarcaster.vercel.app";
