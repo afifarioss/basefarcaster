@@ -32,17 +32,18 @@ export function Hero({
         <h1 className="mt-6 animate-fade-up font-display text-[2.4rem] font-bold leading-[1.08] tracking-tight text-white [animation-delay:80ms] sm:text-5xl">
           {recipientLabel ? (
             <>
-              Tip{" "}
+              Show{" "}
               <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
                 {recipientLabel}
-              </span>
+              </span>{" "}
+                some love.
             </>
           ) : (
             <>
-              Send real USDC
+              Show them they matter.
               <br />
               <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
-                to any Farcaster user.
+                Instantly.
               </span>
             </>
           )}
@@ -50,8 +51,8 @@ export function Hero({
 
         <p className="mx-auto mt-5 max-w-sm animate-fade-up text-[17px] leading-relaxed text-white/55 [animation-delay:160ms]">
           {recipientLabel
-            ? "One tap, no gas, no guesswork. Your tip lands in ~2 seconds, verified onchain."
-            : "One tap, no gas, no guesswork. Funds land in ~2 seconds — verified onchain, every time."}
+            ? "Send them USDC on Base — they'll see it instantly. Verified onchain, ~2 seconds."
+            : "Real USDC on Base. No bridge, no gas confusion. Verified onchain, ~2 seconds."}
         </p>
 
         {/* Trust bar — token, chain, fee, and settlement time, all visible
@@ -62,7 +63,7 @@ export function Hero({
 
         <div className="mt-8 flex animate-fade-up flex-col items-center gap-3 [animation-delay:240ms]">
           <button onClick={handleCtaClick} className="btn-primary w-full max-w-[280px] !py-4 text-base">
-            Tip in 10 seconds
+            {recipientLabel ? `Tip ${recipientLabel}` : "Tip in 10 seconds"}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 12h14M13 6l6 6-6 6"
