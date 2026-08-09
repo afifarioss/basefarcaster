@@ -49,7 +49,7 @@ async function generateVeniceBackground(prompt: string): Promise<string | null> 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
 
-    const res = await fetch("https://api.venice.ai/api/v1/image/generations", {
+    const res = await fetch("https://api.venice.ai/api/v1/image/generate", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -58,12 +58,9 @@ async function generateVeniceBackground(prompt: string): Promise<string | null> 
       body: JSON.stringify({
         model: "venice-sd35", // required by Venice API, confirmed via live 404 test
         prompt,
-        // Venice's documented size presets don't include an exact 1200x800
-        // match for this card's aspect ratio — using a wide preset and
-        // cropping with objectFit: cover below. Revisit if output looks off.
-        size: "1792x1024",
-        n: 1,
-        response_format: "b64_json",
+        width: 1792,
+        height: 1024,
+        format: "png",
       }),
       signal: controller.signal,
     });
@@ -76,9 +73,9 @@ async function generateVeniceBackground(prompt: string): Promise<string | null> 
     }
 
     const data = await res.json();
-    const b64 = data?.data?.[0]?.b64_json;
+    const b64 = data?.images?.[0];
     if (!b64) {
-      console.error("VENICE: no b64_json in response:", JSON.stringify(data).slice(0, 300));
+      console.error("VENICE: no images[0] in response:", JSON.stringify(data).slice(0, 300));
       return null;
     }
 
