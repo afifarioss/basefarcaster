@@ -52,6 +52,7 @@ export const metadata: Metadata = {
     "fc:miniapp": JSON.stringify(frameEmbed),
     "talentapp:project_verification":
       "2d898fbee43c648593d049b3b40ab67970ca202381e3150ee0eec03c5ab43cb8106e8521ead86f916bb0e8a808a0771a2ff0201aea0c49b21714839527e65c78",
+    "virtual-protocol-site-verification": "bd23fdd9d9f402a76789cae0ce54fd39",
   },
 };
 
