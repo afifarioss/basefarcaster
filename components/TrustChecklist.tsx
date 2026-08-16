@@ -1,3 +1,5 @@
+import { PLATFORM_FEE_WALLET } from "@/lib/constants";
+
 const TRUST_ITEMS = [
   "Base Mainnet — settles onchain in seconds",
   "USDC only for tips — no unfamiliar tokens required",
@@ -5,6 +7,7 @@ const TRUST_ITEMS = [
   "You approve every transaction in your own wallet",
   "Creators receive USDC directly to their wallet",
   "View any transaction on Basescan, anytime",
+  "Funds land directly in their wallet the moment you tip — no claiming required",
   "VVV staking is optional and separately non-custodial — you control approve and stake steps, powered by Venice",
 ];
 
@@ -39,6 +42,14 @@ export function TrustChecklist() {
           </li>
         ))}
       </ul>
+      <a
+        href={`https://basescan.org/address/${PLATFORM_FEE_WALLET}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-3 block text-center text-xs text-base-blueLight underline underline-offset-2 hover:text-white"
+      >
+        View the platform fee wallet on Basescan ↗
+      </a>
     </div>
   );
 }
