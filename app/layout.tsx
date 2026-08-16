@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { Providers } from "./providers";
 import { APP_NAME, APP_DESCRIPTION, APP_URL } from "@/lib/constants";
-import "@coinbase/onchainkit/styles.css";
 import "./globals.css";
 
 const inter = Inter({
