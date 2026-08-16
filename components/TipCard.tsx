@@ -175,6 +175,7 @@ export function TipCard({
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     fid: recipientFid,
+                    walletAddress: recipient,
                     amount,
                     tokenSymbol,
                   }),
