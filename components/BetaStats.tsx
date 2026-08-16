@@ -18,7 +18,7 @@ export function BetaStats() {
       .catch(() => setStats(null));
   }, []);
 
-  if (!stats) return null;
+  if (!stats || stats.tipCount === 0) return null;
 
   const items = [
     { label: "Tips sent", value: stats.tipCount },

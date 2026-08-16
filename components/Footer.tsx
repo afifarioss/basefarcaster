@@ -11,6 +11,17 @@ export function Footer() {
         A {PLATFORM_FEE_BPS / 100}% platform fee is applied to every tip and
         supports ongoing development. All transfers are onchain and final.
       </p>
+      <p className="mt-3 text-[11px] text-white/30">
+        Built solo by{" "}
+        <a
+          href="https://farcaster.xyz/afifarioss"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/45 underline underline-offset-2 hover:text-white/70"
+        >
+          @afifarioss
+        </a>
+      </p>
     </footer>
   );
 }
