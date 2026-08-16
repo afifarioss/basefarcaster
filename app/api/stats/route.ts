@@ -27,8 +27,9 @@ const client = createPublicClient({
   transport: http(),
 });
 
-const LOOKBACK_BLOCKS = BigInt(5_000);
-const WINDOW_HOURS = 3;
+// Base produces a block roughly every 2 seconds, so ~43,200 blocks ≈ 24h.
+const LOOKBACK_BLOCKS = BigInt(43_200);
+const WINDOW_HOURS = 24;
 
 export async function GET() {
   try {
