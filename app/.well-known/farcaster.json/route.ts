@@ -1,4 +1,11 @@
-import { APP_NAME, APP_SHORT_NAME, APP_DESCRIPTION, APP_TAGLINE, APP_URL } from "@/lib/constants";
+import {
+  APP_NAME,
+  APP_SHORT_NAME,
+  APP_DESCRIPTION,
+  APP_OG_DESCRIPTION,
+  APP_TAGLINE,
+  APP_URL,
+} from "@/lib/constants";
 
 /**
  * Farcaster Mini App manifest.
@@ -29,7 +36,7 @@ export async function GET() {
     screenshotUrls: [`${APP_URL}/images/screenshot-1.png`],
     heroImageUrl: `${APP_URL}/api/og`,
     ogTitle: `${APP_SHORT_NAME}: Zap USDC on Base`,
-    ogDescription: APP_DESCRIPTION,
+    ogDescription: APP_OG_DESCRIPTION,
     ogImageUrl: `${APP_URL}/api/og`,
     noindex: false,
   };

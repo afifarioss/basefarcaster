@@ -59,9 +59,28 @@ export const TIP_PRESETS = [0.1, 0.5, 1, 5] as const;
 
 export const APP_NAME = "BaseZap";
 export const APP_SHORT_NAME = "BaseZap";
+
+/**
+ * Full description. Used in the manifest's `description` field, which has
+ * no length cap in Base's manifest validator — but must NOT contain the
+ * banned special characters (@ # $ % ^ & * + = / \ | ~ « »), including
+ * em dashes and tildes.
+ */
 export const APP_DESCRIPTION =
-  "Instant USDC funding for Farcaster builders. Paste a username or cast link, pick an amount, and zap them real USDC on Base — non-custodial, ~2 seconds.";
-export const APP_TAGLINE = "Instant USDC funding for Farcaster builders.";
+  "Instant USDC funding for Farcaster builders. Paste a username or cast link, pick an amount, and zap them real USDC on Base. Non-custodial, about 2 seconds.";
+
+/**
+ * Short OG/social description. Capped at 100 characters by the manifest
+ * validator and must avoid the same banned characters as above.
+ */
+export const APP_OG_DESCRIPTION =
+  "Instant USDC funding for Farcaster builders on Base. Non-custodial and fast.";
+
+/**
+ * Tagline. Capped at 30 characters by the manifest validator and must
+ * avoid the same banned characters as above.
+ */
+export const APP_TAGLINE = "Zap real USDC to builders";
 
 export const APP_URL =
   process.env.NEXT_PUBLIC_URL || "https://basefarcaster.vercel.app";
