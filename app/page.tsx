@@ -13,9 +13,6 @@ import { WalletConnect } from "@/components/WalletConnect";
 import { ProfileCard } from "@/components/ProfileCard";
 import { ShareButton } from "@/components/ShareButton";
 import { RecentZaps } from "@/components/RecentZaps";
-import { VeniceAttribution } from "@/components/VeniceAttribution";
-import { VeniceProStatus } from "@/components/VeniceProStatus";
-import { StakeCard } from "@/components/StakeCard";
 import { BuiltWith } from "@/components/BuiltWith";
 import { Footer } from "@/components/Footer";
 import {
@@ -125,9 +122,12 @@ function HomeContent() {
           <TrustChecklist />
             <RecentZaps onCtaClick={() => tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })} />
           <ShareButton className="btn-secondary w-full max-w-md" />
-          <VeniceAttribution />
-          <VeniceProStatus />
-          <StakeCard />
+          <a
+            href="/stake"
+            className="chip w-full max-w-md !py-2.5 text-xs text-white/50"
+          >
+            Also stake VVV (powered by Venice) →
+          </a>
         </div>
       </section>
 
