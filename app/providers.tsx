@@ -7,7 +7,6 @@ import { base } from "wagmi/chains";
 import { coinbaseWallet, injected, metaMask } from "wagmi/connectors";
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 import { OnchainKitProvider } from "@coinbase/onchainkit";
-import { MiniKitProvider } from "@coinbase/onchainkit/minikit";
 import { APP_NAME } from "@/lib/constants";
 
 const wagmiConfig = createConfig({
@@ -52,13 +51,12 @@ export function Providers({ children }: { children: ReactNode }) {
               preference: "all",
             },
           }}
+          miniKit={{
+            enabled: true,
+            autoConnect: true,
+          }}
         >
-          <MiniKitProvider
-            apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
-            chain={base}
-          >
-            {children}
-          </MiniKitProvider>
+          {children}
         </OnchainKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
