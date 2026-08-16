@@ -131,7 +131,7 @@ function HomeContent() {
         </div>
       </section>
 
-      <section className="mt-16 px-5">
+      <section id="how-it-works" className="mt-16 px-5">
         <div className="mx-auto max-w-md">
           <h2 className="text-center font-display text-2xl font-bold text-white">
             How it works

@@ -40,10 +40,10 @@ export function Hero({
             </>
           ) : (
             <>
-              Tip Farcaster users
+              Tip Farcaster people,
               <br />
               <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
-                with USDC on Base.
+                instantly.
               </span>
             </>
           )}
@@ -52,13 +52,13 @@ export function Hero({
         <p className="mx-auto mt-4 max-w-sm animate-fade-up text-sm font-medium text-base-blueLight [animation-delay:120ms]">
           {recipientLabel
             ? "A real tip, not just a like — sent straight to their wallet."
-            : "Reward good Farcaster casts with real USDC — not just a like."}
+            : "BaseZap sends real USDC to any Farcaster user, on Base."}
         </p>
 
         <p className="mx-auto mt-3 max-w-sm animate-fade-up text-[17px] leading-relaxed text-white/55 [animation-delay:160ms]">
           {recipientLabel
             ? "Send them USDC on Base — they'll see it instantly. Verified onchain, ~2 seconds."
-            : "Paste a username or cast link, choose an amount, and zap them instantly."}
+            : "No new app, no waiting — just pick someone and send."}
         </p>
 
         {/* Trust bar — token, chain, fee, and settlement time, all visible
@@ -69,7 +69,7 @@ export function Hero({
 
         <div className="mt-8 flex animate-fade-up flex-col items-center gap-3 [animation-delay:240ms]">
           <button onClick={handleCtaClick} className="btn-primary w-full max-w-[280px] !py-4 text-base">
-            {recipientLabel ? `Tip ${recipientLabel}` : "Zap someone now"}
+            {recipientLabel ? `Tip ${recipientLabel}` : "Send your first tip"}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 12h14M13 6l6 6-6 6"
@@ -83,6 +83,9 @@ export function Hero({
           <p className="text-xs text-white/35">
             Takes ~10 seconds · Works with any Base wallet
           </p>
+          <a href="#how-it-works" className="text-xs text-white/40 underline underline-offset-2 hover:text-white/60">
+            See how it works ↓
+          </a>
 
             <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-[11px] text-white/40">
               <span className="flex items-center gap-1">
