@@ -19,7 +19,7 @@ const STACK = [
     name: "Venice",
     icon: "/images/venice-logo.png",
     blurb:
-      "Private, uncensored AI infrastructure. Stake VVV here to unlock Venice Pro alongside your tips.",
+      "Optional AI infrastructure powering VVV staking — a separate feature from tipping.",
     href: "https://venice.ai",
   },
 ];
