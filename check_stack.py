@@ -16,3 +16,7 @@ print()
 print('=== vercel link check ===')
 print(run('ls -la .vercel 2>/dev/null') or '(.vercel folder not found — is this dir linked to a Vercel project?)')
 print(run('vercel --version') or '(vercel CLI not installed or not on PATH)')
+
+print()
+print('=== viem version check ===')
+print(run('npm ls viem'))
