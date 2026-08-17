@@ -1,0 +1,31 @@
+{
+  "network": "base",
+  "currency": "USDC",
+  "services": {
+    "basezap-agent": {
+      "price": "0.001",
+      "description": "USDC tip quoting and calldata construction for BaseZap on Base. Get platform info, fee-split quotes, and unsigned transfer calldata for onchain tipping.",
+      "schema": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "tool": {
+              "type": "string",
+              "enum": ["get_platform_info", "get_tip_quote", "build_tip_calldata"],
+              "description": "Which tool to call"
+            },
+            "args": {
+              "type": "object",
+              "description": "Tool-specific arguments. get_tip_quote needs {amount_usdc}. build_tip_calldata needs {recipient, amount_usdc}. get_platform_info needs no args."
+            }
+          },
+          "required": ["tool"]
+        },
+        "output": {
+          "type": "object",
+          "description": "Varies by tool — platform config, fee-split quote, or unsigned transfer calldata."
+        }
+      }
+    }
+  }
+}

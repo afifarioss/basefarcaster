@@ -1,0 +1,17 @@
+{
+  "webhooks": {
+    "zap-first-trade": {
+      "description": "zap-first-trade webhook",
+      "readOnly": true,
+      "allowedRecipients": {
+        "evm": [],
+        "solana": []
+      },
+      "rateLimit": {
+        "perMinute": 10,
+        "perDay": 1000
+      },
+      "maxPayloadBytes": 10240
+    }
+  }
+}
