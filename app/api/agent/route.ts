@@ -6,8 +6,8 @@ const USDC_DECIMALS = 6;
 const CHAIN_ID = 8453;
 const PLATFORM_FEE_BPS = 500;
 const FEE_DENOMINATOR = 10000;
-const FEE_WALLET =
-  process.env.FEE_WALLET || "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918";
+const FEE_WALLET = (process.env.FEE_WALLET ||
+  "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918") as `0x${string}`;
 
 const ERC20_ABI = [
   {
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (tool === "build_tip_calldata") {
-      const recipient = args?.recipient;
+      const recipient = args?.recipient as `0x${string}`;
       const amount_usdc = Number(args?.amount_usdc);
       if (!isAddress(recipient)) {
         return Response.json({ error: "recipient must be a valid 0x address" }, { status: 400 });
