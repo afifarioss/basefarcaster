@@ -85,6 +85,17 @@ export const APP_TAGLINE = "Zap real USDC to builders";
 export const APP_URL =
   process.env.NEXT_PUBLIC_URL || "https://basefarcaster.vercel.app";
 
+/**
+ * ERC-8021 Base Builder Code attribution suffix. Appended to sendCalls
+ * capabilities as `dataSuffix` so Base can attribute BaseZap's onchain
+ * transaction volume to this app on base.dev leaderboards/analytics.
+ * Registered via base.dev -> Settings -> Builder Code. Safe to be public:
+ * per Base's docs, it only associates transactions with this app and
+ * exposes no wallet information beyond what's already onchain.
+ */
+export const BASE_BUILDER_CODE_SUFFIX =
+  "0x62635f75706861636f34700b0080218021802180218021802180218021";
+
 /** Minimal ERC-20 ABI — just what we need for balance, transfer, decimals. */
 export const ERC20_ABI = [
   {

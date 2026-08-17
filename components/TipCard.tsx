@@ -8,6 +8,7 @@ import { useAccount, useConnect, useReadContract } from "wagmi";
 import { useCallsStatus, useCapabilities, useSendCalls } from "wagmi/experimental";
 import { encodeFunctionData } from "viem";
 import {
+  BASE_BUILDER_CODE_SUFFIX,
   ERC20_ABI,
   PLATFORM_FEE_BPS,
   PLATFORM_FEE_WALLET,
@@ -157,13 +158,22 @@ export function TipCard({
       sendCalls(
         {
           calls,
-          capabilities: paymasterSupported
-            ? {
-                paymasterService: {
-                  url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
-                },
-              }
-            : {},
+          capabilities: {
+            ...(paymasterSupported
+              ? {
+                  paymasterService: {
+                    url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
+                  },
+                }
+              : {}),
+            // Base ERC-8021 attribution. `optional: true` means wallets
+            // that don't support dataSuffix simply ignore it rather than
+            // failing the whole batch.
+            dataSuffix: {
+              value: BASE_BUILDER_CODE_SUFFIX,
+              optional: true,
+            },
+          },
         },
         {
           onSuccess: (data) => {
