@@ -13,6 +13,7 @@ import { WalletConnect } from "@/components/WalletConnect";
 import { ProfileCard } from "@/components/ProfileCard";
 import { ShareButton } from "@/components/ShareButton";
 import { RecentZaps } from "@/components/RecentZaps";
+import { Leaderboard } from "@/components/Leaderboard";
 import { ZapWidget } from "@/components/ZapWidget";
 import { BuiltWith } from "@/components/BuiltWith";
 import { Footer } from "@/components/Footer";
@@ -122,6 +123,7 @@ function HomeContent() {
 
           <TrustChecklist />
             <RecentZaps onCtaClick={() => tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })} />
+          <Leaderboard />
           <ShareButton className="btn-secondary w-full max-w-md" />
           <ZapWidget />
           <a
