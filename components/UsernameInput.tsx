@@ -88,7 +88,7 @@ export function UsernameInput({
         <input
           type="text"
           inputMode="text"
-          placeholder="e.g. vitalik.eth or a cast link"
+          placeholder="@username or cast link"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           className="w-full rounded-xl border border-white/[0.08] bg-white/[0.02] py-3 pl-9 pr-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-base-blue/50"

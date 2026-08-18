@@ -1,6 +1,7 @@
 "use client";
 
 import { TrustBar } from "./TrustBar";
+import { Testimonial } from "./Testimonial";
 import { SocialProof } from "./SocialProof";
 
 export function Hero({
@@ -29,36 +30,36 @@ export function Hero({
           </span>
         </div>
 
-        <h1 className="mt-6 animate-fade-up font-display text-[2.4rem] font-bold leading-[1.08] tracking-tight text-white [animation-delay:80ms] sm:text-5xl">
+        <h1 className="mt-6 animate-fade-up font-display text-[2.15rem] font-bold leading-[1.1] tracking-tight text-white [animation-delay:80ms] sm:text-5xl">
           {recipientLabel ? (
             <>
-              Show{" "}
+              Send USDC to{" "}
               <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
                 {recipientLabel}
-              </span>{" "}
-                some love.
+              </span>
             </>
           ) : (
             <>
-              Tip Farcaster people,
-              <br />
-              <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
-                instantly.
+              <span className="sm:hidden">
+                Send USDC with just a{" "}
+                <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
+                  username
+                </span>
+              </span>
+              <span className="hidden sm:inline">
+                Send USDC tips on Base with just a{" "}
+                <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
+                  username or cast link
+                </span>
               </span>
             </>
           )}
         </h1>
 
-        <p className="mx-auto mt-4 max-w-sm animate-fade-up text-sm font-medium text-base-blueLight [animation-delay:120ms]">
+        <p className="mx-auto mt-4 max-w-sm animate-fade-up text-[17px] leading-relaxed text-white/55 [animation-delay:120ms]">
           {recipientLabel
-            ? "A real tip, not just a like — sent straight to their wallet."
-            : "BaseZap sends real USDC to any Farcaster user, on Base."}
-        </p>
-
-        <p className="mx-auto mt-3 max-w-sm animate-fade-up text-[17px] leading-relaxed text-white/55 [animation-delay:160ms]">
-          {recipientLabel
-            ? "Send them USDC on Base — they'll see it instantly. Verified onchain, ~2 seconds."
-            : "No new app, no waiting — just pick someone and send."}
+            ? "A real tip, not just a like — sent straight to their wallet, verified onchain in ~2 seconds."
+            : "BaseZap lets Farcaster users reward builders, creators, and helpful replies with real USDC — no bridging, no wallet hunting, non-custodial."}
         </p>
 
         {/* Trust bar — token, chain, fee, and settlement time, all visible
@@ -69,7 +70,7 @@ export function Hero({
 
         <div className="mt-8 flex animate-fade-up flex-col items-center gap-3 [animation-delay:240ms]">
           <button onClick={handleCtaClick} className="btn-primary w-full max-w-[280px] !py-4 text-base">
-            {recipientLabel ? `Tip ${recipientLabel}` : "Send your first tip"}
+            {recipientLabel ? `Tip ${recipientLabel}` : "⚡ Zap someone now"}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 12h14M13 6l6 6-6 6"
@@ -87,25 +88,34 @@ export function Hero({
             See how it works ↓
           </a>
 
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-[11px] text-white/40">
-              <span className="flex items-center gap-1">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-white/60">1</span>
-                Paste a username
-              </span>
-              <span className="text-white/20">→</span>
-              <span className="flex items-center gap-1">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-white/60">2</span>
-                Pick an amount
-              </span>
-              <span className="text-white/20">→</span>
-              <span className="flex items-center gap-1">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-white/60">3</span>
-                They get USDC instantly
-              </span>
-            </div>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-[11px] text-white/40">
+            <span className="flex items-center gap-1">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-white/60">1</span>
+              Paste a username or cast link
+            </span>
+            <span className="text-white/20">→</span>
+            <span className="flex items-center gap-1">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-white/60">2</span>
+              Pick a USDC amount
+            </span>
+            <span className="text-white/20">→</span>
+            <span className="flex items-center gap-1">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-white/60">3</span>
+              Confirm in your wallet
+            </span>
+            <span className="text-white/20">→</span>
+            <span className="flex items-center gap-1">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-white/60">4</span>
+              Recipient gets USDC
+            </span>
+          </div>
         </div>
 
         <div className="mt-8 animate-fade-up [animation-delay:320ms]">
+          <Testimonial />
+        </div>
+
+        <div className="mt-4 animate-fade-up [animation-delay:360ms]">
           <SocialProof />
         </div>
       </div>
