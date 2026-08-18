@@ -21,7 +21,7 @@ import { resolveFarcasterUser } from "@/lib/resolve-farcaster-user";
  * Same underlying resolver as the free /api/resolve-user route (shared
  * via lib/resolve-farcaster-user.ts), just priced for agent traffic.
  */
-async function handler(req: NextRequest) {
+async function handler(req: NextRequest): Promise<NextResponse<any>> {
   const result = await resolveFarcasterUser({
     username: req.nextUrl.searchParams.get("username"),
     fid: req.nextUrl.searchParams.get("fid"),
