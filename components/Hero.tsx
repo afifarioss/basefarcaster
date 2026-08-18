@@ -1,8 +1,40 @@
 "use client";
 
+import { useState } from "react";
 import { TrustBar } from "./TrustBar";
 import { Testimonial } from "./Testimonial";
 import { SocialProof } from "./SocialProof";
+
+const ZAP_TOKEN_ADDRESS = "0x8C1ca2c32CD197a27CA049aA0427f64192aD3ba3";
+
+function ZapTokenChip() {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(ZAP_TOKEN_ADDRESS);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API unavailable -- ignore, address is still visible to copy manually.
+    }
+  };
+
+  const short = `${ZAP_TOKEN_ADDRESS.slice(0, 6)}...${ZAP_TOKEN_ADDRESS.slice(-4)}`;
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="chip !cursor-pointer gap-1.5 !border-white/[0.08] !bg-white/[0.03] text-[11px] text-white/40 hover:text-white/60"
+      title={ZAP_TOKEN_ADDRESS}
+    >
+      <span className="font-semibold text-[#D4AF37]">$ZAP</span>
+      <span className="font-mono">{short}</span>
+      <span>{copied ? "Copied ✓" : "Tap to copy"}</span>
+      <span className="text-white/25">· via Clanker</span>
+    </button>
+  );
+}
 
 export function Hero({
   onCtaClick,
@@ -117,6 +149,10 @@ export function Hero({
 
         <div className="mt-4 animate-fade-up [animation-delay:360ms]">
           <SocialProof />
+        </div>
+
+        <div className="mt-5 flex animate-fade-up justify-center [animation-delay:400ms]">
+          <ZapTokenChip />
         </div>
       </div>
     </section>
