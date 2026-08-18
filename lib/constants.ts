@@ -9,10 +9,10 @@ import { base } from "wagmi/chains";
  */
 export const PLATFORM_FEE_WALLET =
   (process.env.NEXT_PUBLIC_FEE_WALLET as `0x${string}`) ||
-  "0x000000000000000000000000000000000000dEaD";
+  "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918";
 
-/** Platform fee, in basis points. 500 = 5%. */
-export const PLATFORM_FEE_BPS = 500;
+/** Platform fee, in basis points. 200 = 2%. */
+export const PLATFORM_FEE_BPS = 200;
 export const FEE_DENOMINATOR = 10000;
 
 /** Native USDC on Base Mainnet. */

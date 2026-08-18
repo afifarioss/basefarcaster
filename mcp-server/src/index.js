@@ -29,10 +29,10 @@ import { z } from "zod";
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const USDC_DECIMALS = 6;
 const CHAIN_ID = 8453; // Base Mainnet
-const PLATFORM_FEE_BPS = 500; // 5%
+const PLATFORM_FEE_BPS = 200; // 2%
 const FEE_DENOMINATOR = 10000;
 const FEE_WALLET =
-  process.env.FEE_WALLET || "0x000000000000000000000000000000000000dEaD";
+  process.env.FEE_WALLET || "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918";
 
 const ERC20_ABI = [
   {
