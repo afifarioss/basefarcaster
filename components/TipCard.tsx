@@ -47,6 +47,21 @@ export function TipCard({
   });
   const resolvedTxHash = callsStatus?.receipts?.[0]?.transactionHash;
 
+
+  // Detect whether the connected wallet actually supports gas sponsorship
+  // (EIP-5792 paymasterService) before requesting it. Wallets that don't
+  // support it should generally ignore an unsupported capability, but
+  // checking upfront lets us know the real sponsorship state rather than
+  // assuming it's always active.
+  const { data: availableCapabilities } = useCapabilities({ account: address });
+  const paymasterSupported = useMemo(() => {
+    if (!availableCapabilities || !chainId) return false;
+    return availableCapabilities[chainId]?.paymasterService?.supported === true;
+  }, [availableCapabilities, chainId]);
+
+  const [tokenSymbol, setTokenSymbol] =
+    useState<TippableTokenSymbol>("USDC");
+
   // Records the tip for the public history feed once the real onchain tx
   // hash resolves (callsId/onSuccess only gives a bundle id, not a hash).
   // Guarded by a ref so it fires exactly once per tip, not on every
@@ -75,19 +90,6 @@ export function TipCard({
     }
   }, [resolvedTxHash, address, tokenSymbol, recipient, amount]);
 
-  // Detect whether the connected wallet actually supports gas sponsorship
-  // (EIP-5792 paymasterService) before requesting it. Wallets that don't
-  // support it should generally ignore an unsupported capability, but
-  // checking upfront lets us know the real sponsorship state rather than
-  // assuming it's always active.
-  const { data: availableCapabilities } = useCapabilities({ account: address });
-  const paymasterSupported = useMemo(() => {
-    if (!availableCapabilities || !chainId) return false;
-    return availableCapabilities[chainId]?.paymasterService?.supported === true;
-  }, [availableCapabilities, chainId]);
-
-  const [tokenSymbol, setTokenSymbol] =
-    useState<TippableTokenSymbol>("USDC");
   const token = TIPPABLE_TOKENS.find((t) => t.symbol === tokenSymbol)!;
 
   // USDC's decimals are a known constant (6). VVV's are fetched live from
