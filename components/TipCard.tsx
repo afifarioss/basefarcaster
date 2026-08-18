@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useConnect, useReadContract } from "wagmi";
 // EIP-5792 batched calls are still exposed from wagmi's experimental entry
 // point as of wagmi v2.13. Check the wagmi changelog when upgrading —
@@ -33,6 +33,7 @@ export function TipCard({
   const { connectors, connect } = useConnect();
   const { sendCalls, isPending } = useSendCalls();
   const [callsId, setCallsId] = useState<string | undefined>(undefined);
+  const historyRecordedRef = useRef(false);
   // Resolves the EIP-5792 bundle ID into a real onchain transaction hash —
   // sendCalls only gives back a bundle id (data.id), not a tx hash, and
   // that bundle id is NOT a valid Basescan link on its own.
@@ -45,6 +46,34 @@ export function TipCard({
     },
   });
   const resolvedTxHash = callsStatus?.receipts?.[0]?.transactionHash;
+
+  // Records the tip for the public history feed once the real onchain tx
+  // hash resolves (callsId/onSuccess only gives a bundle id, not a hash).
+  // Guarded by a ref so it fires exactly once per tip, not on every
+  // re-render while useCallsStatus keeps polling.
+  useEffect(() => {
+    if (
+      resolvedTxHash &&
+      address &&
+      tokenSymbol === "USDC" &&
+      !historyRecordedRef.current
+    ) {
+      historyRecordedRef.current = true;
+      fetch("/api/record-tip-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: address,
+          to: recipient,
+          amountUsdc: amount,
+          txHash: resolvedTxHash,
+          tokenSymbol,
+        }),
+      }).catch(() => {
+        // History recording is best-effort — never surface this to the tipper.
+      });
+    }
+  }, [resolvedTxHash, address, tokenSymbol, recipient, amount]);
 
   // Detect whether the connected wallet actually supports gas sponsorship
   // (EIP-5792 paymasterService) before requesting it. Wallets that don't
