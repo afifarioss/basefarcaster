@@ -62,33 +62,6 @@ export function TipCard({
   const [tokenSymbol, setTokenSymbol] =
     useState<TippableTokenSymbol>("USDC");
 
-  // Records the tip for the public history feed once the real onchain tx
-  // hash resolves (callsId/onSuccess only gives a bundle id, not a hash).
-  // Guarded by a ref so it fires exactly once per tip, not on every
-  // re-render while useCallsStatus keeps polling.
-  useEffect(() => {
-    if (
-      resolvedTxHash &&
-      address &&
-      tokenSymbol === "USDC" &&
-      !historyRecordedRef.current
-    ) {
-      historyRecordedRef.current = true;
-      fetch("/api/record-tip-history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: address,
-          to: recipient,
-          amountUsdc: amount,
-          txHash: resolvedTxHash,
-          tokenSymbol,
-        }),
-      }).catch(() => {
-        // History recording is best-effort — never surface this to the tipper.
-      });
-    }
-  }, [resolvedTxHash, address, tokenSymbol, recipient, amount]);
 
   const token = TIPPABLE_TOKENS.find((t) => t.symbol === tokenSymbol)!;
 
@@ -130,6 +103,35 @@ export function TipCard({
     }
     return selected;
   }, [isCustom, custom, selected]);
+
+  // Records the tip for the public history feed once the real onchain tx
+  // hash resolves (callsId/onSuccess only gives a bundle id, not a hash).
+  // Guarded by a ref so it fires exactly once per tip, not on every
+  // re-render while useCallsStatus keeps polling.
+  useEffect(() => {
+    if (
+      resolvedTxHash &&
+      address &&
+      tokenSymbol === "USDC" &&
+      !historyRecordedRef.current
+    ) {
+      historyRecordedRef.current = true;
+      fetch("/api/record-tip-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: address,
+          to: recipient,
+          amountUsdc: amount,
+          txHash: resolvedTxHash,
+          tokenSymbol,
+        }),
+      }).catch(() => {
+        // History recording is best-effort — never surface this to the tipper.
+      });
+    }
+  }, [resolvedTxHash, address, tokenSymbol, recipient, amount]);
+
 
   const { fee, recipientAmount } = useMemo(
     () => splitTipAmount(amount || 0, decimals),
