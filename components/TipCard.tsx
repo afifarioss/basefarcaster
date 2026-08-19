@@ -234,6 +234,7 @@ export function TipCard({
                     from: address,
                     to: recipient,
                     amountUsdc: amount,
+                    callsId: data.id,
                   }),
                 }).catch(() => {
                   // Leaderboard recording is best-effort — never surface this to the tipper.
