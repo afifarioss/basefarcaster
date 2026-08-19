@@ -5,6 +5,12 @@
  * only, never holds keys or broadcasts transactions.
  */
 
+// This package has zero dependencies by design (isolated for standalone
+// x402 marketplace deployment via bankr.x402.json) so it cannot import
+// from lib/constants.ts or read env vars the way the main app does.
+// SOURCE OF TRUTH: lib/constants.ts in the main basefarcaster app.
+// If USDC_ADDRESS, PLATFORM_FEE_BPS, or the fee wallet ever change there,
+// update the values below to match by hand.
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const USDC_DECIMALS = 6;
 const CHAIN_ID = 8453;

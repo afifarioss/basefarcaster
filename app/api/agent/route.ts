@@ -1,38 +1,25 @@
-import { encodeFunctionData, isAddress, parseUnits } from "viem";
+import { encodeFunctionData, isAddress } from "viem";
 import { NextRequest } from "next/server";
-
-const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-const USDC_DECIMALS = 6;
-const CHAIN_ID = 8453;
-const PLATFORM_FEE_BPS = 200;
-const FEE_DENOMINATOR = 10000;
-const FEE_WALLET = (process.env.FEE_WALLET ||
-  "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918") as `0x${string}`;
-
-const ERC20_ABI = [
-  {
-    type: "function",
-    name: "transfer",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "to", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    outputs: [{ name: "", type: "bool" }],
-  },
-] as const;
-
-function splitTipAmount(amountUsdc: number) {
-  const total = parseUnits(amountUsdc.toFixed(USDC_DECIMALS), USDC_DECIMALS);
-  const fee = (total * BigInt(PLATFORM_FEE_BPS)) / BigInt(FEE_DENOMINATOR);
-  const recipientAmount = total - fee;
-  return { total, fee, recipientAmount };
-}
+import {
+  USDC_ADDRESS,
+  USDC_DECIMALS,
+  PLATFORM_FEE_BPS,
+  PLATFORM_FEE_WALLET,
+  ERC20_ABI,
+  CHAIN,
+} from "@/lib/constants";
+import { splitTipAmount } from "@/lib/utils";
 
 // Same three tools as mcp-server/src/index.js, exposed as a single HTTP
 // endpoint instead of stdio, so this can be called by any HTTP client
 // (including an x402-gated agent request) instead of only a local MCP
 // subprocess. Logic is identical — only the transport differs.
+//
+// Shares its constants and fee-split math with the main app via
+// lib/constants.ts / lib/utils.ts, rather than a local copy — this is the
+// single tool surface that can safely do so, since it runs in the same
+// Next.js build. mcp-server/ and x402/basezap-agent/ are separate isolated
+// packages and keep their own manually-synced copies by necessity.
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { tool, args } = body ?? {};
@@ -41,11 +28,11 @@ export async function POST(req: NextRequest) {
     if (tool === "get_platform_info") {
       return Response.json({
         chain: "base",
-        chain_id: CHAIN_ID,
+        chain_id: CHAIN.id,
         usdc_address: USDC_ADDRESS,
         usdc_decimals: USDC_DECIMALS,
         platform_fee_bps: PLATFORM_FEE_BPS,
-        platform_fee_wallet: FEE_WALLET,
+        platform_fee_wallet: PLATFORM_FEE_WALLET,
       });
     }
 
@@ -89,14 +76,14 @@ export async function POST(req: NextRequest) {
           data: encodeFunctionData({
             abi: ERC20_ABI,
             functionName: "transfer",
-            args: [FEE_WALLET, fee],
+            args: [PLATFORM_FEE_WALLET, fee],
           }),
           description: `Transfer ${Number(fee) / 10 ** USDC_DECIMALS} USDC platform fee`,
         },
       ];
 
       return Response.json({
-        chain_id: CHAIN_ID,
+        chain_id: CHAIN.id,
         calls,
         note: "UNSIGNED calldata. This endpoint does not hold keys or broadcast transactions.",
       });

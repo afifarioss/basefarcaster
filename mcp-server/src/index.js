@@ -31,8 +31,14 @@ const USDC_DECIMALS = 6;
 const CHAIN_ID = 8453; // Base Mainnet
 const PLATFORM_FEE_BPS = 200; // 2%
 const FEE_DENOMINATOR = 10000;
+// Checks NEXT_PUBLIC_FEE_WALLET first — that's the name used in the main
+// Next.js app (lib/constants.ts) and in Vercel production. FEE_WALLET is
+// kept as a fallback name for standalone/local runs of this MCP server
+// outside the main app's env.
 const FEE_WALLET =
-  process.env.FEE_WALLET || "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918";
+  process.env.NEXT_PUBLIC_FEE_WALLET ||
+  process.env.FEE_WALLET ||
+  "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918";
 
 const ERC20_ABI = [
   {
