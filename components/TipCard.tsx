@@ -221,6 +221,7 @@ export function TipCard({
                     walletAddress: recipient,
                     amount,
                     tokenSymbol,
+                    callsId: data.id,
                   }),
                 }).catch(() => {
                   // Notification is best-effort — never surface this to the tipper.

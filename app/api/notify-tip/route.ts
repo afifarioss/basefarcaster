@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Redis } from "@upstash/redis";
 import { APP_URL } from "@/lib/constants";
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL as string,
+  token: process.env.KV_REST_API_TOKEN as string,
+});
 
 /**
  * Notifies a tip recipient across both notification surfaces:
@@ -19,12 +25,26 @@ export async function POST(req: NextRequest) {
   const walletAddress = body?.walletAddress;
   const amount = body?.amount;
   const tokenSymbol = body?.tokenSymbol ?? "USDC";
+  const callsId = body?.callsId;
 
   if (!fid && !walletAddress) {
     return NextResponse.json(
       { error: "Missing fid or walletAddress" },
       { status: 400 }
     );
+  }
+
+  // Idempotency guard: same callsId used by record-tip. Prevents a
+  // duplicate onSuccess fire from double-notifying the recipient.
+  if (typeof callsId === "string" && callsId.length > 0) {
+    const isNew = await redis.set(`notify:seen:${callsId}`, "1", {
+      nx: true,
+      ex: 86400,
+    });
+    if (!isNew) {
+      console.warn("notify-tip: duplicate callsId ignored", callsId);
+      return NextResponse.json({ ok: true, duplicate: true });
+    }
   }
 
   const title = "You got tipped ⚡";
