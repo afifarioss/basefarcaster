@@ -22,6 +22,16 @@ export function Footer() {
           @afifarioss
         </a>
       </p>
+      <p className="mt-2 text-[11px] text-white/30">
+        <a
+          href="https://base-zap.mintlify.site/introduction"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/45 underline underline-offset-2 hover:text-white/70"
+        >
+          Docs
+        </a>
+      </p>
     </footer>
   );
 }
