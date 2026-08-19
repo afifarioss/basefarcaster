@@ -65,13 +65,13 @@ const TOOLS = [
   {
     name: "get_platform_info",
     description:
-      "Returns BaseFarCaster's static platform configuration: chain, USDC token address, platform fee (basis points), and the platform fee wallet. Read-only, no side effects.",
+      "Returns BaseFarCaster's static platform configuration: chain (Base Mainnet, chain_id 8453), USDC token address, platform fee (2%, in basis points), and the platform fee wallet. Read-only, no side effects. Call this first if you don't already know the chain or USDC address.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
     name: "get_tip_quote",
     description:
-      "Given a tip amount in USDC, returns the exact-sum fee split: how much the creator receives and how much goes to the 5% platform fee. Pure calculation, read-only.",
+      "Given a tip amount in USDC, returns the exact-sum fee split: how much the creator receives and how much goes to the 2% platform fee. Pure calculation, read-only — does not require a recipient address.",
     inputSchema: {
       type: "object",
       properties: {
@@ -79,6 +79,7 @@ const TOOLS = [
           type: "number",
           description: "Tip amount in USDC, e.g. 1.5",
           exclusiveMinimum: 0,
+          examples: [1, 1.5, 5],
         },
       },
       required: ["amount_usdc"],
@@ -88,18 +89,20 @@ const TOOLS = [
   {
     name: "build_tip_calldata",
     description:
-      "Constructs UNSIGNED ERC-20 transfer calldata for both legs of a tip (creator + platform fee), ready to be signed and sent by a wallet-connected client via wagmi's sendCalls or two sequential transfers. This tool does NOT sign or broadcast anything — it has no key custody and cannot move funds on its own.",
+      "Constructs UNSIGNED ERC-20 transfer calldata for both legs of a tip (creator + platform fee), ready to be signed and sent by a wallet-connected client via wagmi's sendCalls or two sequential transfers. This tool does NOT sign or broadcast anything — it has no key custody and cannot move funds on its own. This tool needs a resolved wallet address, not a Farcaster username or ENS name — resolve those separately first.",
     inputSchema: {
       type: "object",
       properties: {
         recipient: {
           type: "string",
-          description: "Creator's wallet address (0x...) to receive the tip",
+          description: "Creator's resolved wallet address on Base, in 0x-prefixed hex format (not a username or ENS name)",
+          examples: ["0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918"],
         },
         amount_usdc: {
           type: "number",
           description: "Total tip amount in USDC, e.g. 1.5",
           exclusiveMinimum: 0,
+          examples: [1, 1.5, 5],
         },
       },
       required: ["recipient", "amount_usdc"],
