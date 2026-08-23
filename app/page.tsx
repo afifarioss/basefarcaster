@@ -18,6 +18,7 @@ import { TipHistory } from "@/components/TipHistory";
 import { ZapWidget } from "@/components/ZapWidget";
 import { BuiltWith } from "@/components/BuiltWith";
 import { Footer } from "@/components/Footer";
+import { FirstVisitModal } from "@/components/FirstVisitModal";
 import {
   APP_NAME,
   DEFAULT_RECIPIENT_WALLET,
@@ -76,6 +77,7 @@ function HomeContent() {
 
   return (
     <main className="relative min-h-screen bg-noise-grid">
+      <FirstVisitModal />
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.06] bg-surface-void/80 px-5 py-4 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0A0A0A] border border-[#D4AF37]/40">
