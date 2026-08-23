@@ -1,4 +1,3 @@
-cat > app/api/agent/route.ts << 'EOF'
 import { NextRequest } from "next/server";
 import {
   USDC_ADDRESS,
@@ -64,5 +63,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-EOF
-
