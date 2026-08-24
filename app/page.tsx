@@ -16,6 +16,7 @@ import { RecentZaps } from "@/components/RecentZaps";
 import { Leaderboard } from "@/components/Leaderboard";
 import { TipHistory } from "@/components/TipHistory";
 import { ZapWidget } from "@/components/ZapWidget";
+import { AgentExplanation } from "@/components/AgentExplanation";
 import { BuiltWith } from "@/components/BuiltWith";
 import { Footer } from "@/components/Footer";
 import { FirstVisitModal } from "@/components/FirstVisitModal";
@@ -130,6 +131,7 @@ function HomeContent() {
           <TipHistory />
           <ShareButton className="btn-secondary w-full max-w-md" />
           <ZapWidget />
+          <AgentExplanation />
           <a
             href="/stake"
             className="chip w-full max-w-md !py-2.5 text-xs text-white/50"

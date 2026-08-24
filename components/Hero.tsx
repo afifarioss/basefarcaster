@@ -3,7 +3,6 @@
 import { TrustBar } from "./TrustBar";
 import { Testimonial } from "./Testimonial";
 import { SocialProof } from "./SocialProof";
-import { AgentExplanation } from "./AgentExplanation";
 
 export function Hero({
   onCtaClick,
@@ -117,10 +116,6 @@ export function Hero({
         </div>
         <div className="mt-4 animate-fade-up [animation-delay:360ms]">
           <SocialProof />
-        </div>
-
-        <div className="mt-12 animate-fade-up [animation-delay:400ms]">
-          <AgentExplanation />
         </div>
       </div>
     </section>
