@@ -1,15 +1,28 @@
+import { Redis } from "@upstash/redis";
+
 export const runtime = "edge";
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL as string,
+  token: process.env.KV_REST_API_TOKEN as string,
+});
 
 const ZAP_TOKEN_ADDRESS = "0x8C1ca2c32CD197a27CA049aA0427f64192aD3ba3";
 const BANKR_WALLET = "0x050454783b290a1c90430a6968493b33092cde9d";
 const WEBHOOK_URL = `https://webhooks.bankr.bot/u/${BANKR_WALLET}/zap-first-trade`;
+const FIRED_KEY = "zap:first-trade-fired";
 
-// Simple in-memory-free check: relies on KV or similar for persistence in
-// production. For now, checks live volume and fires unconditionally when
-// nonzero — Bankr's rate limit (10/min, 1000/day) prevents spam, and this
-// cron should be scheduled at a low frequency (e.g. every 30 min).
+// Fires the zap-first-trade webhook exactly once: the first time 24h volume
+// is observed as nonzero. Uses a Redis guard so repeated cron runs after
+// the first fire are no-ops, instead of relying on Bankr's rate limit to
+// silently absorb duplicate calls.
 export async function GET() {
   try {
+    const alreadyFired = await redis.get(FIRED_KEY);
+    if (alreadyFired) {
+      return Response.json({ checked: true, fired: false, reason: "already-fired" });
+    }
+
     const res = await fetch(
       `https://api.dexscreener.com/latest/dex/tokens/${ZAP_TOKEN_ADDRESS}`
     );
@@ -20,11 +33,17 @@ export async function GET() {
     const volume24h = pair?.volume?.h24 ?? 0;
 
     if (volume24h > 0) {
+      const setOk = await redis.set(FIRED_KEY, "1", { nx: true });
+      if (!setOk) {
+        return Response.json({ checked: true, fired: false, reason: "race-lost" });
+      }
+
       await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ volume24h }),
       });
+
       return Response.json({ checked: true, fired: true, volume24h });
     }
 
