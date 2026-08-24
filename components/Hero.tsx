@@ -3,6 +3,7 @@
 import { TrustBar } from "./TrustBar";
 import { Testimonial } from "./Testimonial";
 import { SocialProof } from "./SocialProof";
+import { AgentExplanation } from "./AgentExplanation";
 
 export function Hero({
   onCtaClick,
@@ -41,16 +42,10 @@ export function Hero({
           ) : (
             <>
               <span className="sm:hidden">
-                Send USDC with just a{" "}
-                <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
-                  username
-                </span>
+                Zap anyone on Base.
               </span>
               <span className="hidden sm:inline">
-                Send USDC tips on Base with just a{" "}
-                <span className="bg-gradient-to-r from-base-blueLight to-white bg-clip-text text-transparent">
-                  username or cast link
-                </span>
+                Zap anyone on Base.
               </span>
             </>
           )}
@@ -59,7 +54,13 @@ export function Hero({
         <p className="mx-auto mt-4 max-w-sm animate-fade-up text-[17px] leading-relaxed text-white/55 [animation-delay:120ms]">
           {recipientLabel
             ? "A real tip, not just a like — sent straight to their wallet, verified onchain in ~2 seconds."
-            : "BaseZap lets Farcaster users reward builders, creators, and helpful replies with real USDC — no bridging, no wallet hunting, non-custodial."}
+            : "People, services, and AI — all one instant payment."}
+        </p>
+
+        <p className="mx-auto mt-4 max-w-sm animate-fade-up text-base leading-relaxed text-white/60 [animation-delay:130ms]">
+          {!recipientLabel && (
+            <>Support creators with a direct tip. Call an AI agent and pay for the result. Both instant, both onchain, both on Base.</>
+          )}
         </p>
 
         {/* Trust bar — token, chain, fee, and settlement time, all visible
@@ -106,7 +107,7 @@ export function Hero({
             <span className="text-white/20">→</span>
             <span className="flex items-center gap-1">
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-white/60">4</span>
-              Recipient gets USDC
+              Both settle instantly
             </span>
           </div>
         </div>
@@ -114,9 +115,12 @@ export function Hero({
         <div className="mt-8 animate-fade-up [animation-delay:320ms]">
           <Testimonial />
         </div>
-
         <div className="mt-4 animate-fade-up [animation-delay:360ms]">
           <SocialProof />
+        </div>
+
+        <div className="mt-12 animate-fade-up [animation-delay:400ms]">
+          <AgentExplanation />
         </div>
       </div>
     </section>
