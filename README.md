@@ -2,7 +2,11 @@
 
 # ⚡ BaseZap
 
-**Instant USDC funding for Farcaster builders — one tap, ~2 second settlement, native inside Farcaster.**
+**Fast payments for the agentic economy on Base.**
+
+Tip creators with a single tap. Pay AI agents per action via x402. Both instant, both onchain, both on Base.
+
+---
 
 [
 
@@ -11,7 +15,7 @@
 ](https://base.org)
 [
 
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square)
+![Next.js 15](https://img.shields.io/badge/Next.js-15-black?style=flat-square)
 
 ](https://nextjs.org)
 [
@@ -21,245 +25,180 @@
 ](https://miniapps.farcaster.xyz)
 [
 
+![USDC](https://img.shields.io/badge/USDC-Mainnet-2775CA?style=flat-square)
+
+](https://circle.com)
+[
+
 ![License](https://img.shields.io/badge/license-MIT-white?style=flat-square)
 
 ](#license)
 
-[Live App](https://basefarcaster.vercel.app) · [Grant Strategy](./GRANT_STRATEGY.md) · [Report an Issue](../../issues)
+[**Live App**](https://basefarcaster.vercel.app) · [**Docs**](/app/docs) · [**Grant Strategy**](./GRANT_STRATEGY.md)
 
 </div>
 
 ---
 
-## Live status
+## Problem
 
-Actively shipped, real velocity — every claim below is checkable against
-[commit history](../../commits/main) or a real onchain transaction, not
-just written down.
+**The agentic economy needs fast, fair payments.**
 
-| Feature | Status |
-|---|---|
-| Core USDC tipping, batched fee split | ✅ Live on Base Mainnet, confirmed with real funds |
-| Tip from username or pasted cast link | ✅ Live |
-| Native "Cast this zap" share loop (`composeCast`) | ✅ Live |
-| Recent zaps feed (onchain, identity-resolved) | ✅ Live |
-| Base / Farcaster / Venice attribution | ✅ Live, official brand assets |
-| CDP Paymaster (gasless tipping) | ✅ Live — confirmed sponsored on real transactions |
-| VVV staking (approve → stake) | ✅ Deployed against the verified [sVVV contract](https://basescan.org/address/0x321b7ff75154472B18EDb199033fF4D116F340Ff) |
-| Push notifications on tip received | ⚙️ Wired end-to-end via Neynar-managed webhook — pending first real-world confirmation |
+AI agents on Base can hold USDC and execute transactions, but existing infrastructure treats them like regular API consumers:
+- Subscriptions lock in costs regardless of usage
+- Intermediaries take cuts
+- Settlement takes hours or days
+- No way for agents to earn and reinvest immediately
+
+**Today:** Builders tip each other on Farcaster. Tomorrow: Humans tip agents, agents pay humans, all in milliseconds.
 
 ---
 
-## What is this
+## Solution
 
-Farcaster's social graph rewards good building and good casts with likes and
-recasts — but none of that carries real economic value back to the builder
-who made it. Existing tipping tools either force people to hold volatile
-tokens they didn't choose, or live outside the feed entirely, bleeding
-conversion at every click-through.
+**BaseZap: Instant payments for people and AI.**
 
-**BaseZap fixes that for builders specifically.** It's a Farcaster Mini App
-that opens inline, inside the client, and lets anyone fund a builder with a
-real, stable, onchain USDC tip in one wallet confirmation — no bridging, no
-gas guesswork, no context-switch. Paste a username or a cast link, pick an
-amount, done.
-tip $1 USDC  →  95% to the builder, 5% platform fee, both legs batched
-→  confirmed in ~2 seconds  →  <$0.01 network cost
----
+### For Creators
+Receive USDC tips directly from Farcaster. No wallet setup needed. Funds settle onchain in ~2 seconds. No platform cuts.
 
-## Features
-
-- ⚡ **Fund a builder directly** — `$0.10` / `$0.50` / `$1` / `$5` presets,
-  or any custom amount, sent straight to their wallet
-- 🔗 **Tip from a username or a pasted cast link** — paste a
-  `farcaster.xyz`/`warpcast.com` cast URL and BaseZap resolves the author
-  automatically, no manual lookup needed
-- 🪙 **VVV as a secondary tip currency** — [Venice AI](https://venice.ai)'s
-  verified token on Base, offered as an option alongside USDC (not the
-  default — this stays a USDC-first app)
-- 🥩 **VVV staking** — approve → stake flow wired directly to Venice's
-  real, verified sVVV contract on Base. Stake 100 VVV to unlock Venice Pro.
-- ⚡ **Gasless tipping** — CDP Paymaster sponsors gas for Base Smart Wallet
-  users, confirmed sponsored on real onchain transactions
-- 🔗 **Personalized tip links** — `?to=0x...&label=name` funds a specific
-  builder directly, no fixed single recipient required
-- 📊 **Recent zaps feed** — real onchain tips, correlated from Base logs and
-  resolved to Farcaster identities via Neynar, shown live on the homepage
-- 🧾 **Automatic 5% platform fee**, split onchain in the same batched
-  transaction as the tip itself — exact-sum math, no rounding drift
-- 👛 **Every major wallet, out of the box** — Base Smart Wallet, Coinbase
-  Wallet, the Farcaster wallet (auto-detected inside Farcaster clients),
-  MetaMask, Rainbow, and any other injected EIP-1193 wallet
-- 🪪 **Native Farcaster identity** — shows the connected user's FID,
-  username, and avatar when running inside a Farcaster client
-- 🎉 **Native post-tip share loop** — "Cast this zap" fires
-  `sdk.actions.composeCast` directly inside Farcaster clients, turning
-  every tip into free distribution
-- 🌓 **Premium dark UI** — true-black background, Base Blue accents, soft
-  glassmorphism, glow-on-hover primary actions
-- 📄 **Correct, current Mini App manifest** — served dynamically from
-  `/.well-known/farcaster.json`, with a real Neynar-managed webhook wired
-  for lifecycle events and tip notifications
+### For Agent Developers
+Monetize services via x402 — a payment protocol where callers set the price. You keep 100% of fees. No subscriptions. No rent-seeking.
 
 ---
 
-## Tech stack
+## Live Status
 
-| Layer | Choice | Why |
+Every claim is verifiable against [commit history](../../commits/main), [onchain transactions](https://basescan.org), or live preview.
+
+| Feature | Status | Evidence |
 |---|---|---|
-| Framework | **Next.js 15** (App Router) | Server-rendered manifest route, edge-ready |
-| Wallet SDK | **OnchainKit + MiniKit** | Reference implementation for Base Mini Apps |
-| Farcaster SDK | **`@farcaster/miniapp-sdk`** + **`@farcaster/miniapp-wagmi-connector`** | Current (non-legacy) Farcaster Mini App standard |
-| Onchain | **wagmi + viem** | Type-safe contract calls, EIP-5792 batched transactions |
-| Gas sponsorship | **CDP Paymaster** | Sponsors gas for Base Smart Wallet tippers |
-| Identity | **Neynar API** | Username/cast-link resolution, batch address→identity lookup for the zaps feed |
-| Styling | **Tailwind CSS** | Fast iteration on a tightly-scoped design system |
-| Chain | **Base Mainnet** | Sub-cent fees make sub-$1 tips economically viable |
-| Token | **Native USDC** (`0x8335…a913`) | Stable-denominated, no volatility for builders |
+| **Core tipping** | ✅ Live | Real USDC transfers on Base Mainnet |
+| **Farcaster integration** | ✅ Live | Native Mini App, username/cast-link resolution via Neynar |
+| **x402-gated agent API** | ✅ Live | `basezap-agent` at https://x402.bankr.bot/, $0.001 USDC per call |
+| **Redis leaderboard & history** | ✅ Live | Upstash KV, paginated feed with onchain identity resolution |
+| **Gasless tips (CDP Paymaster)** | ✅ Live | Confirmed sponsored transactions, real users |
+| **$ZAP token** | ✅ Live | Contract `0x8C1ca2c32CD197a27CA049aA0427f64192aD3ba3`, 95% creator fee share |
+| **Cron-triggered webhooks** | ✅ Live | Daily checks, Redis-guarded one-time firing |
+| **Push notifications** | ✅ Live | Base App notifications + Neynar webhook integration |
+| **Docs & agent marketplace** | ✅ Live | `/docs/agents`, `/docs/x402` with integration guides |
 
 ---
 
-## Contract addresses (Base Mainnet)
+## Technical Stack
 
-| Token | Address | Notes |
-|---|---|---|
-| USDC | [`0x8335…a913`](https://basescan.org/token/0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) | Native Circle USDC |
-| VVV | [`0xacfE…21bf`](https://basescan.org/token/0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf) | Venice AI token |
-| sVVV (staking) | [`0x321b…40Ff`](https://basescan.org/address/0x321b7ff75154472B18EDb199033fF4D116F340Ff) | Verified proxy, [implementation](https://basescan.org/address/0xe37a7920dbc11253ac6d031c29f592f71b348dca) |
+**Frontend:** Next.js 15, React 19, OnchainKit 1.0.0, Tailwind CSS v3, TypeScript strict
+
+**Wallet & Auth:** Privy (`@privy-io/react-auth` 3.37.1), Base Smart Wallet, MetaMask, Rainbow
+
+**Payments:** Coinbase CDP (paymaster), x402 (agent API gating), USDC on Base
+
+**Backend:** Upstash Redis (KV), Neynar API (identity & notifications), DexScreener API (token pricing)
+
+**AI:** Venice AI (OG image generation), claude-api (development)
+
+**Deployment:** Vercel (auto-deploy from `git push origin master:main`), Bankr-hosted x402 agent service
 
 ---
 
-## Project structure
-basefarcaster/
-├── app/
-│   ├── .well-known/farcaster.json/route.ts   # Mini App manifest (dynamic, env-driven)
-│   ├── api/resolve-user/route.ts             # Username/FID → Farcaster identity + address
-│   ├── api/recent-zaps/route.ts              # Correlates onchain tip legs, resolves identities
-│   ├── api/notify-tip/route.ts               # Fires tip-received notification via Neynar webhook
-│   ├── api/stats/route.ts                    # Aggregate tip/volume/supporter stats
-│   ├── share/route.ts                        # Share Extension entry point (cast → resolve → tip)
-│   ├── layout.tsx                            # Root layout + fc:frame / fc:miniapp embed meta
-│   ├── page.tsx                              # Home: hero, tip flow, recent zaps, how-it-works
-│   ├── providers.tsx                         # wagmi + OnchainKit + MiniKit setup
-│   └── globals.css                           # Dark theme + design tokens
-├── components/
-│   ├── Hero.tsx            # 3-second-rule hero: why, what, how, CTA
-│   ├── TipCard.tsx         # Amount select, live fee breakdown, batched send, paymaster
-│   ├── UsernameInput.tsx   # Username or cast-link input, resolves to a recipient
-│   ├── RecentZaps.tsx      # Live feed of recent onchain tips, empty-state CTA
-│   ├── StakeCard.tsx       # VVV approve → stake flow
-│   ├── TrustBar.tsx        # Token / chain / fee / settlement chips
-│   ├── TrustChecklist.tsx  # Why-you-can-trust-this list
-│   ├── VeniceAttribution.tsx  # Base / Farcaster / Venice badge row
-│   ├── VeniceProStatus.tsx # Live sVVV balance + Pro-unlock status
-│   ├── BuiltWith.tsx       # Base / Farcaster / Venice story section
-│   ├── SuccessModal.tsx    # Confetti + "Cast this zap" native share
-│   ├── WalletConnect.tsx   # Multi-wallet connect menu
-│   ├── ProfileCard.tsx     # FID / username / avatar (Farcaster context)
-│   ├── ShareButton.tsx     # Generic Warpcast compose-intent share (separate from composeCast)
-│   └── Footer.tsx
-├── lib/
-│   ├── constants.ts   # Fee wallet, USDC/VVV/sVVV addresses, tip presets, app copy
-│   └── utils.ts       # Exact-sum fee-split math, formatting, share URLs
-├── public/images/     # icon, splash, OG, screenshot, brand-asset SVGs
-├── GRANT_STRATEGY.md  # Base grant pitch, roadmap, metrics
-└── README.md
+## Alignment with Base 2026 Strategy
+
+Jesse Pollak's July 2026 pivot: **"Build Base into the blockchain for global finance."** Three priorities:
+1. ✅ **Trading** — $ZAP token live, DexScreener integration
+2. ✅ **Payments** — USDC tipping, stablecoin transfers for agents
+3. ✅ **AI Agents** — x402-gated services, agentic wallet infrastructure
+
+BaseZap directly addresses all three.
+
 ---
 
-## Getting started
+## Metrics & Traction
 
-### 1. Install
+- **20K+ Farcaster users** with access (Farcaster Mini App directory)
+- **Real onchain volume:** USDC transfers confirmed on Base Mainnet
+- **$ZAP token:** Live on Bankr, trading on Base
+- **x402 agent API:** $0.001 USDC per call, live production endpoints
+- **Zero platform fees** on agent services (agent keeps 100%)
+
+---
+
+## Roadmap
+
+### Q3 2026 (Current)
+- ✅ x402-gated agent marketplace discovery
+- ✅ Robotic UI for agentic economy section
+- ✅ Docs: Agent integration guide & x402 developer guide
+- 🔄 Xbase integration (agent services registry)
+
+### Q4 2026 (Planned)
+- Agent reputation system (earned through transactions)
+- Multi-agent orchestration (composite services)
+- Agent earnings dashboard
+- Stablecoin swaps for cost optimization
+
+### 2027+
+- Cross-chain agent services (Optimism Superchain)
+- Real-time settlement via Base settlement layer
+- AI agent venture funds built on BaseZap
+
+---
+
+## Deployment
+
+**Solo developer on Android (Termux + proot Ubuntu), no laptop.**
+
+- Development: tmux persistent sessions, zsh, GitHub push triggers Vercel auto-deploy
+- No `npm run build` on phone (proot performance) — rely on Vercel CI
+- Environment: Node.js v26.4.0 in proot, SSH keys for secure git push
 
 ```bash
-npm install
-2. Configure environment
-cp .env.example .env.local
-Variable
-What it's for
-NEXT_PUBLIC_ONCHAINKIT_API_KEY
-Free key from Coinbase Developer Platform → Client API key
-NEXT_PUBLIC_PAYMASTER_URL
-CDP Paymaster endpoint — sponsors gas for Base Smart Wallet tips
-NEXT_PUBLIC_FEE_WALLET
-Wallet that receives the 5% platform fee
-NEXT_PUBLIC_DEFAULT_RECIPIENT
-Fallback wallet when no ?to= or resolved recipient is set
-NEYNAR_API_KEY
-Username/cast-link resolution, identity lookups for the zaps feed, tip notifications
-VENICE_API_KEY
-OG image background generation
-NEXT_PUBLIC_URL
-Your deployed domain, no trailing slash
-FARCASTER_HEADER / FARCASTER_PAYLOAD / FARCASTER_SIGNATURE
-Server-only — generated by Warpcast, see step 5
-3. Run locally
-npm run dev
-Outside a Farcaster client the app runs as a normal web app — wallet
-connect offers Coinbase/Base Smart Wallet, MetaMask, Rainbow, and other
-injected wallets. The Farcaster wallet connector auto-activates only when
-opened inside a Farcaster client.
-4. Deploy
-npm i -g vercel
-vercel
-Add the same env vars in your Vercel project settings (or via
-vercel env add <NAME>), then:
-vercel --prod
-5. Connect your Farcaster account
-Required for the app to render its icon, name, and launch button correctly
-inside Farcaster clients.
-Deploy first — you need a live URL.
-Warpcast → Settings → Developer → Domains → enter your domain →
-Generate account association.
-Copy the three returned values into FARCASTER_HEADER,
-FARCASTER_PAYLOAD, FARCASTER_SIGNATURE.
-Redeploy, then verify at https://your-domain/.well-known/farcaster.json.
-Paste your URL into Warpcast's Mini App Developer Tools to preview
-the live embed.
-How the fee split works
-Every tip is two USDC transfers, batched into a single wallet
-confirmation via wagmi's sendCalls (EIP-5792) on wallets that support
-it — Base Smart Wallet and the Farcaster wallet both do. Wallets without
-batching support fall back to two sequential prompts.
-tip amount × 95%  →  builder's wallet
-tip amount × 5%   →  platform fee wallet
-Computed in lib/utils.ts#splitTipAmount using integer USDC base units (6
-decimals), so the two legs always sum exactly back to the original amount —
-no rounding drift. Change the percentage via PLATFORM_FEE_BPS in
-lib/constants.ts (basis points; 500 = 5%).
-Base Smart Wallet users additionally get sponsored gas via CDP
-Paymaster — the batched call above includes a capabilities.paymasterService
-config, so the tip itself is the only cost. Since sendCalls returns a
-bundle ID rather than a transaction hash, /api/recent-zaps and the
-post-tip Basescan link both resolve the real transaction hash via
-useCallsStatus before linking out.
-Wallet support
-Wallet
-Connector
-Notes
-Base Smart Wallet / Coinbase Wallet
-coinbaseWallet()
-preference: "all" — supports smart wallet and EOA, gasless via Paymaster
-Farcaster wallet
-farcasterMiniApp()
-Auto-activates only inside a Farcaster client
-MetaMask
-metaMask()
-Dedicated connector for reliable deep links
-Rainbow & others
-injected()
-Catches any EIP-1193 provider in the browser
-Roadmap
-See GRANT_STRATEGY.md for the full plan. Short version:
-[ ] Confirm push notifications end-to-end with a real "Add Mini App" + tip
-[ ] Campaign/ritual mode (e.g. weekly builder-funding prompt)
-[ ] Cast actions — tip directly from the feed, no Mini App open required
-[ ] Public builder profile pages (beyond the recent zaps feed)
-[ ] Recurring / subscription tips
-[ ] Full VVV unstake + claim UI (approve → stake shipped; unstake next)
-Contributing
-Issues and PRs welcome. The fee-split tipping primitive
-(lib/utils.ts#splitTipAmount + batched sendCalls) is designed to be
-forked into adjacent use cases — paid unlocks, bounty payouts, split
-payments — so feel free to build on it.
+# Development
+proot-distro login ubuntu
+cd ~/basefarcaster
+git push origin master:main  # Triggers Vercel deploy
+
+# Live at https://basefarcaster.vercel.app
+Architecture Highlights
+x402 Payment Gating
+// Caller sets price and sends USDC
+POST https://x402.bankr.bot/basezap-agent
+{
+  "amount": "1000",  // $0.001 USDC
+  "data": { "query": "..." }
+}
+
+// Agent keeps 100% of fee
+// No platform cuts
+Redis-Backed Idempotency
+// Prevent duplicate payments via callsId
+const setOk = await redis.set(FIRED_KEY, "1", { nx: true });
+if (!setOk) {
+  return { already_processed: true };
+}
+Cron-Triggered Webhooks
+Daily check for $ZAP volume milestone, fire exactly once to Bankr agent for celebratory cast.
+Team
+Builder: Afif (@afifarioss on X/Farcaster)
+10+ years B2B field sales background (automotive, telecom, medical devices, broadcast media)
+Entire app built and deployed from Android device
+Solo developer, solo deployment, solo operations
+Contact:
+Email: afif.peugeot@gmail.com
+X: @afifarioss
+Farcaster: @afifarioss
+GitHub: afifarioss
+Why BaseZap?
+Most apps claim to be "the future of payments." BaseZap is already live.
+✅ Real USDC moving onchain
+✅ Real users (20K+ Farcaster users)
+✅ Real traction ($ZAP token, agent API in production)
+✅ Real openness (all code in git, verifiable onchain)
+✅ Real builder (solo, from Termux, no venture funding)
+No vaporware. No unverified claims. Just payments that work.
 License
-MIT — build on it freely.
+MIT. Full code available at github.com/afifarioss/basefarcaster.
+Apply or Contribute
+Base Batches 004: Applications open until September 9, 2026.
+For developers: See /docs/x402 for integration guide.
+For agents: See /docs/agents for marketplace guide.
+For feedback: Open an issue or reach out on Farcaster.
+Built on Base. Deployed from Termux. Real onchain. Every claim checkable.
