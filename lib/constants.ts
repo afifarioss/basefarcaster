@@ -1,152 +1,233 @@
 import { base } from "wagmi/chains";
 
 /**
- * ─────────────────────────────────────────────────────────────────────────
- * PLATFORM FEE WALLET
- * This is the address that receives the platform fee on every tip.
- * Change this to your own wallet before deploying to production.
- * ─────────────────────────────────────────────────────────────────────────
+ * BaseZap constants
+ *
+ * Default creator:
+ *   afifarioss.base.eth
+ *
+ * Resolved wallet supplied by project owner:
+ *   0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918
+ */
+
+/**
+ * Platform fee wallet.
+ *
+ * NEXT_PUBLIC_FEE_WALLET overrides this in production.
  */
 export const PLATFORM_FEE_WALLET =
   (process.env.NEXT_PUBLIC_FEE_WALLET as `0x${string}`) ||
   "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918";
 
-/** Platform fee, in basis points. 200 = 2%. */
+/**
+ * Platform fee.
+ *
+ * 200 BPS = 2%.
+ */
 export const PLATFORM_FEE_BPS = 200;
 export const FEE_DENOMINATOR = 10000;
 
-/** Native USDC on Base Mainnet. */
+/**
+ * Base Mainnet native USDC.
+ */
 export const USDC_ADDRESS: `0x${string}` =
   "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 export const USDC_DECIMALS = 6;
 
 /**
- * Venice AI's VVV token on Base — verified contract, real liquidity.
- * https://basescan.org/token/0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf
- * Decimals are fetched live from the contract at runtime rather than
- * hardcoded here, since we don't hardcode facts about a token we don't
- * control.
+ * Venice AI VVV token on Base Mainnet.
  */
 export const VVV_ADDRESS: `0x${string}` =
   "0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf";
 
 /**
- * Tokens tippable in the app. USDC is first and is the default — per
- * product positioning, this stays a USDC-tipping app first, with VVV
- * offered as a secondary option, not the headline feature.
+ * Tokens supported for tipping.
+ *
+ * USDC is the primary/default token.
+ * VVV is the secondary token.
  */
 export const TIPPABLE_TOKENS = [
-  { symbol: "USDC", address: USDC_ADDRESS, decimals: USDC_DECIMALS },
-  { symbol: "VVV", address: VVV_ADDRESS, decimals: null }, // fetched live
+  {
+    symbol: "USDC",
+    address: USDC_ADDRESS,
+    decimals: USDC_DECIMALS,
+  },
+  {
+    symbol: "VVV",
+    address: VVV_ADDRESS,
+    decimals: null,
+  },
 ] as const;
 
-export type TippableTokenSymbol = (typeof TIPPABLE_TOKENS)[number]["symbol"];
+export type TippableTokenSymbol =
+  (typeof TIPPABLE_TOKENS)[number]["symbol"];
 
+/**
+ * Base Mainnet.
+ */
 export const CHAIN = base;
 
 /**
- * The default receiving wallet for tips when no creator address
- * is passed via the `to` query param. Replace with your own creator
- * wallet, or wire this up dynamically per-profile.
+ * Default creator Basename.
+ */
+export const DEFAULT_RECIPIENT_BASENAME =
+  "afifarioss.base.eth";
+
+/**
+ * Default receiving wallet for tips.
+ *
+ * NEXT_PUBLIC_DEFAULT_RECIPIENT overrides this value.
  */
 export const DEFAULT_RECIPIENT_WALLET =
   (process.env.NEXT_PUBLIC_DEFAULT_RECIPIENT as `0x${string}`) ||
-  "0x000000000000000000000000000000000000dEaD";
+  "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918";
 
-/** Preset tip amounts shown as quick-select chips, in USDC. */
+/**
+ * Preset tip amounts shown as quick-select chips.
+ *
+ * Values are in the selected token's human-readable units.
+ */
 export const TIP_PRESETS = [0.1, 0.5, 1, 5] as const;
 
+/**
+ * Application identity.
+ */
 export const APP_NAME = "BaseZap";
 export const APP_SHORT_NAME = "BaseZap";
 
 /**
- * Full description. Used in the manifest's `description` field, which has
- * no length cap in Base's manifest validator — but must NOT contain the
- * banned special characters (@ # $ % ^ & * + = / \ | ~ « »), including
- * em dashes and tildes.
+ * Full application description.
+ *
+ * Keep special-character restrictions in mind when using this
+ * value in the Base manifest.
  */
 export const APP_DESCRIPTION =
-  "Instant USDC funding for Farcaster builders. Paste a username or cast link, pick an amount, and zap them real USDC on Base. Non-custodial, about 2 seconds.";
+  "Instant USDC funding for Farcaster builders. Paste a username or cast link, pick an amount, and send USDC on Base.";
 
 /**
- * Short OG/social description. Capped at 100 characters by the manifest
- * validator and must avoid the same banned characters as above.
+ * Short OG/social description.
+ *
+ * Keep this under 100 characters.
  */
 export const APP_OG_DESCRIPTION =
   "Instant USDC funding for Farcaster builders on Base. Non-custodial and fast.";
 
 /**
- * Tagline. Capped at 30 characters by the manifest validator and must
- * avoid the same banned characters as above.
+ * Application tagline.
+ *
+ * Keep this under 30 characters.
  */
-export const APP_TAGLINE = "Zap real USDC to builders";
-
-export const APP_URL =
-  process.env.NEXT_PUBLIC_URL || "https://basefarcaster.vercel.app";
+export const APP_TAGLINE =
+  "Zap real USDC to builders";
 
 /**
- * ERC-8021 Base Builder Code attribution suffix. Appended to sendCalls
- * capabilities as `dataSuffix` so Base can attribute BaseZap's onchain
- * transaction volume to this app on base.dev leaderboards/analytics.
- * Registered via base.dev -> Settings -> Builder Code. Safe to be public:
- * per Base's docs, it only associates transactions with this app and
- * exposes no wallet information beyond what's already onchain.
+ * Public application URL.
+ */
+export const APP_URL =
+  process.env.NEXT_PUBLIC_URL ||
+  "https://basefarcaster.vercel.app";
+
+/**
+ * ERC-8021 Base Builder Code attribution suffix.
+ *
+ * Appended to supported Base transactions for builder attribution.
  */
 export const BASE_BUILDER_CODE_SUFFIX =
   "0x62635f75706861636f34700b0080218021802180218021802180218021";
 
-/** Minimal ERC-20 ABI — just what we need for balance, transfer, decimals. */
+/**
+ * Minimal ERC-20 ABI.
+ *
+ * Used for:
+ * - transfer
+ * - balanceOf
+ * - decimals
+ * - approve
+ */
 export const ERC20_ABI = [
   {
     type: "function",
     name: "transfer",
     stateMutability: "nonpayable",
     inputs: [
-      { name: "to", type: "address" },
-      { name: "amount", type: "uint256" },
+      {
+        name: "to",
+        type: "address",
+      },
+      {
+        name: "amount",
+        type: "uint256",
+      },
     ],
-    outputs: [{ name: "", type: "bool" }],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+      },
+    ],
   },
   {
     type: "function",
     name: "balanceOf",
     stateMutability: "view",
-    inputs: [{ name: "account", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
+    inputs: [
+      {
+        name: "account",
+        type: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+      },
+    ],
   },
   {
     type: "function",
     name: "decimals",
     stateMutability: "view",
     inputs: [],
-    outputs: [{ name: "", type: "uint8" }],
+    outputs: [
+      {
+        name: "",
+        type: "uint8",
+      },
+    ],
   },
   {
     type: "function",
     name: "approve",
     stateMutability: "nonpayable",
     inputs: [
-      { name: "spender", type: "address" },
-      { name: "amount", type: "uint256" },
+      {
+        name: "spender",
+        type: "address",
+      },
+      {
+        name: "amount",
+        type: "uint256",
+      },
     ],
-    outputs: [{ name: "", type: "bool" }],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+      },
+    ],
   },
 ] as const;
 
 /**
- * Venice's staking contract — deposit VVV here, receive sVVV back 1:1.
- * Verified: Basescan labels it "Venice: sVVV Token", and it matches
- * Venice's own official fact sheet PDF and a real wallet transaction
- * preview against venice.ai/token. Do not change without re-verifying.
+ * Venice VVV staking contract.
+ *
+ * VVV is deposited here and sVVV is received.
  */
 export const VVV_STAKING_ADDRESS: `0x${string}` =
   "0x321b7ff75154472B18EDb199033fF4D116F340Ff";
 
 /**
- * Staked VVV required to unlock Venice Pro, per Venice's own official
- * page (venice.ai/lp/vvv): "When you stake 100 VVV you'll enjoy free
- * access to Venice Pro." Sourced directly — do not adjust without
- * re-checking that page.
+ * VVV required for Venice Pro.
  */
 export const VVV_PRO_STAKE_THRESHOLD = 100;
