@@ -16,17 +16,34 @@ const FIRED_KEY = "zap:first-trade-fired";
 // is observed as nonzero. Uses a Redis guard so repeated cron runs after
 // the first fire are no-ops, instead of relying on Bankr's rate limit to
 // silently absorb duplicate calls.
-export async function GET() {
+export async function GET(request: Request) {
+  const authHeader = request.headers.get("authorization");
+
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   try {
     const alreadyFired = await redis.get(FIRED_KEY);
+
     if (alreadyFired) {
-      return Response.json({ checked: true, fired: false, reason: "already-fired" });
+      return Response.json({
+        checked: true,
+        fired: false,
+        reason: "already-fired",
+      });
     }
 
     const res = await fetch(
       `https://api.dexscreener.com/latest/dex/tokens/${ZAP_TOKEN_ADDRESS}`
     );
-    if (!res.ok) return Response.json({ checked: true, fired: false });
+
+    if (!res.ok) {
+      return Response.json({
+        checked: true,
+        fired: false,
+      });
+    }
 
     const data = await res.json();
     const pair = data?.pairs?.[0];
@@ -34,23 +51,41 @@ export async function GET() {
 
     if (volume24h > 0) {
       const setOk = await redis.set(FIRED_KEY, "1", { nx: true });
+
       if (!setOk) {
-        return Response.json({ checked: true, fired: false, reason: "race-lost" });
+        return Response.json({
+          checked: true,
+          fired: false,
+          reason: "race-lost",
+        });
       }
 
       await fetch(WEBHOOK_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ volume24h }),
       });
 
-      return Response.json({ checked: true, fired: true, volume24h });
+      return Response.json({
+        checked: true,
+        fired: true,
+        volume24h,
+      });
     }
 
-    return Response.json({ checked: true, fired: false, volume24h });
+    return Response.json({
+      checked: true,
+      fired: false,
+      volume24h,
+    });
   } catch (err) {
     return Response.json(
-      { checked: false, error: err instanceof Error ? err.message : "unknown" },
+      {
+        checked: false,
+        error: err instanceof Error ? err.message : "unknown",
+      },
       { status: 500 }
     );
   }
