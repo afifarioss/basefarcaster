@@ -2,51 +2,109 @@
 
 import { useEffect, useState } from "react";
 
-const CAST_URL_RE = /(?:farcaster\.xyz|warpcast\.com)\/([a-zA-Z0-9_.-]+)\/0x[a-f0-9]+/i;
+const CAST_URL_RE =
+  /(?:farcaster\.xyz|warpcast\.com)\/([a-zA-Z0-9_.-]+)\/0x[a-f0-9]+/i;
 
-type ResolvedUser = {
+const BASENAME_RE =
+  /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.base\.eth$/i;
+
+type ResolvedRecipient = {
   username: string;
   displayName: string;
   pfpUrl: string;
   address: `0x${string}`;
-  fid: number;
+  fid?: number;
 };
+
+function normalizeInput(value: string): string {
+  return value.trim().replace(/^@/, "");
+}
 
 export function UsernameInput({
   onResolve,
 }: {
-  onResolve: (user: ResolvedUser | null) => void;
+  onResolve: (user: ResolvedRecipient | null) => void;
 }) {
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "found" | "error">(
-    "idle"
-  );
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "found" | "error"
+  >("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [resolved, setResolved] = useState<ResolvedUser | null>(null);
+  const [resolved, setResolved] =
+    useState<ResolvedRecipient | null>(null);
 
   useEffect(() => {
-    const castMatch = input.trim().match(CAST_URL_RE);
+    const trimmed = input.trim();
+
+    const castMatch = trimmed.match(CAST_URL_RE);
     const cleaned = castMatch
       ? castMatch[1]
-      : input.trim().replace(/^@/, "");
+      : normalizeInput(trimmed);
 
     if (!cleaned) {
       setStatus("idle");
       setResolved(null);
+      setErrorMsg("");
       onResolve(null);
       return;
     }
 
     setStatus("loading");
+    setErrorMsg("");
+
     const timeout = setTimeout(async () => {
       try {
+        /*
+         * Basename resolution.
+         *
+         * Route:
+         * /api/basename/resolve
+         */
+        if (BASENAME_RE.test(cleaned)) {
+          const res = await fetch(
+            `/api/basename/resolve?name=${encodeURIComponent(cleaned)}`
+          );
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            setStatus("error");
+            setErrorMsg(
+              res.status === 404
+                ? "That Basename could not be resolved."
+                : data.error ||
+                    "Something went wrong resolving that Basename."
+            );
+            setResolved(null);
+            onResolve(null);
+            return;
+          }
+
+          const basenameUser: ResolvedRecipient = {
+            username: data.name,
+            displayName: data.name,
+            pfpUrl: "",
+            address: data.address,
+          };
+
+          setStatus("found");
+          setResolved(basenameUser);
+          onResolve(basenameUser);
+          return;
+        }
+
+        /*
+         * Farcaster username / cast URL resolution.
+         */
         const res = await fetch(
           `/api/resolve-user?username=${encodeURIComponent(cleaned)}`
         );
+
         const data = await res.json();
 
         if (!res.ok) {
           setStatus("error");
+
           if (res.status === 404) {
             setErrorMsg(
               "Couldn't find that user — check the exact spelling, or paste their profile link."
@@ -56,26 +114,41 @@ export function UsernameInput({
               "This user hasn't connected a wallet to Farcaster yet."
             );
           } else {
-            setErrorMsg(data.error || "Something went wrong looking that up.");
+            setErrorMsg(
+              data.error ||
+                "Something went wrong looking that up."
+            );
           }
+
           setResolved(null);
           onResolve(null);
           return;
         }
 
+        const farcasterUser: ResolvedRecipient = {
+          username: data.username,
+          displayName: data.displayName,
+          pfpUrl: data.pfpUrl,
+          address: data.address,
+          fid: data.fid,
+        };
+
         setStatus("found");
-        setResolved(data);
-        onResolve(data);
+        setResolved(farcasterUser);
+        onResolve(farcasterUser);
       } catch {
         setStatus("error");
-        setErrorMsg("Failed to look up user");
+        setErrorMsg("Failed to look up that recipient.");
         setResolved(null);
         onResolve(null);
       }
-    }, 500); // debounce so we don't hit the API on every keystroke
+    }, 500);
 
     return () => clearTimeout(timeout);
-  }, [input]);
+  }, [input, onResolve]);
+
+  const normalizedInput = normalizeInput(input);
+  const isCurrentBasename = BASENAME_RE.test(normalizedInput);
 
   return (
     <div className="w-full">
@@ -85,10 +158,11 @@ export function UsernameInput({
             @
           </span>
         )}
+
         <input
           type="text"
           inputMode="text"
-          placeholder="@username or cast link"
+          placeholder="@username, Basename, or cast link"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           className="w-full rounded-xl border border-white/[0.08] bg-white/[0.02] py-3 pl-9 pr-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-base-blue/50"
@@ -100,27 +174,42 @@ export function UsernameInput({
 
       {status === "loading" && (
         <p className="mt-2 text-xs text-white/40">
-          Looking up @{input.trim().match(CAST_URL_RE)?.[1] ?? input}…
+          {isCurrentBasename
+            ? `Resolving ${normalizedInput}…`
+            : `Looking up @${
+                input.trim().match(CAST_URL_RE)?.[1] ??
+                normalizedInput
+              }…`}
         </p>
       )}
 
       {status === "found" && resolved && (
         <div className="mt-2 flex items-center gap-2 rounded-lg border border-base-blue/25 bg-base-blue/5 px-3 py-2">
-          <img
-            src={resolved.pfpUrl}
-            width={28}
-            height={28}
-            className="rounded-full"
-            alt=""
-          />
+          {resolved.pfpUrl ? (
+            <img
+              src={resolved.pfpUrl}
+              width={28}
+              height={28}
+              className="rounded-full"
+              alt=""
+            />
+          ) : (
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-base-blue/15 text-xs font-bold text-base-blueLight">
+              B
+            </div>
+          )}
+
           <span className="text-sm text-white/85">
-            {resolved.displayName || `@${resolved.username}`}
+            {resolved.displayName ||
+              `@${resolved.username}`}
           </span>
         </div>
       )}
 
       {status === "error" && (
-        <p className="mt-2 text-xs text-red-400">{errorMsg}</p>
+        <p className="mt-2 text-xs text-red-400">
+          {errorMsg}
+        </p>
       )}
     </div>
   );
