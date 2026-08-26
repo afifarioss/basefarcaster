@@ -38,17 +38,37 @@ export async function GET() {
     const fromBlock =
       latest > LOOKBACK_BLOCKS ? latest - LOOKBACK_BLOCKS : BigInt(0);
 
-    const logs = await client.getLogs({
-      address: USDC_ADDRESS,
-      event: parseAbiItem(
-        "event Transfer(address indexed from, address indexed to, uint256 value)"
-      ),
-      args: {
-        to: PLATFORM_FEE_WALLET,
-      },
-      fromBlock,
-      toBlock: latest,
-    });
+    const TRANSFER_EVENT = parseAbiItem(
+      "event Transfer(address indexed from, address indexed to, uint256 value)"
+    );
+
+    // Base RPC providers commonly cap eth_getLogs at 10,000 blocks.
+    // Query the 24h window in safe chunks instead of requesting 43,200 blocks at once.
+    const MAX_LOG_BLOCK_RANGE = BigInt(9_000);
+    const logs = [];
+
+    for (
+      let chunkFrom = fromBlock;
+      chunkFrom <= latest;
+      chunkFrom += MAX_LOG_BLOCK_RANGE + BigInt(1)
+    ) {
+      const chunkTo =
+        chunkFrom + MAX_LOG_BLOCK_RANGE > latest
+          ? latest
+          : chunkFrom + MAX_LOG_BLOCK_RANGE;
+
+      const chunkLogs = await client.getLogs({
+        address: USDC_ADDRESS,
+        event: TRANSFER_EVENT,
+        args: {
+          to: PLATFORM_FEE_WALLET,
+        },
+        fromBlock: chunkFrom,
+        toBlock: chunkTo,
+      });
+
+      logs.push(...chunkLogs);
+    }
 
     const tipCount = logs.length;
 
