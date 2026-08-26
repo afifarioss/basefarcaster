@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveBasename } from "@/lib/basename";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const name = req.nextUrl.searchParams.get("name");
 
