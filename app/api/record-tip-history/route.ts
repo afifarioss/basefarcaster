@@ -7,7 +7,12 @@ import {
   parseAbiItem,
 } from "viem";
 import { base } from "viem/chains";
-import { USDC_ADDRESS, USDC_DECIMALS } from "@/lib/constants";
+import {
+  DIEM_ADDRESS,
+  DIEM_DECIMALS,
+  USDC_ADDRESS,
+  USDC_DECIMALS,
+} from "@/lib/constants";
 import { splitTipAmount } from "@/lib/utils";
 
 const redis = new Redis({
@@ -46,24 +51,22 @@ export async function POST(req: Request) {
       return Response.json({ ok: false }, { status: 400 });
     }
 
-    // On-chain verification currently only covers USDC — the only token
-    // this route is actually called for from the client (see TipCard).
-    if ((tokenSymbol ?? "USDC") !== "USDC") {
+    const selectedToken = tokenSymbol ?? "USDC";
+
+    // History verification supports USDC and optional DIEM.
+    // VVV remains outside this verification path for now.
+    const tokenConfig =
+      selectedToken === "USDC"
+        ? { address: USDC_ADDRESS, decimals: USDC_DECIMALS }
+        : selectedToken === "DIEM"
+          ? { address: DIEM_ADDRESS, decimals: DIEM_DECIMALS }
+          : null;
+
+    if (!tokenConfig) {
       return Response.json(
         { ok: false, error: "unsupported token for verification" },
         { status: 400 }
       );
-    }
-
-    // Idempotency guard keyed on the real tx hash — prevents replaying the
-    // same valid transaction to inflate history with duplicate entries.
-    const isNewTx = await redis.set(`tiphistory:seen:${txHash}`, "1", {
-      nx: true,
-      ex: 86400,
-    });
-    if (!isNewTx) {
-      console.warn("record-tip-history: duplicate txHash ignored", txHash);
-      return Response.json({ ok: true, duplicate: true });
     }
 
     let receipt;
@@ -93,13 +96,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // The onchain recipient leg is amountUsdc minus the platform fee —
-    // TipCard sends the full tip amount as two separate ERC20 transfers.
-    const { recipientAmount } = splitTipAmount(amountUsdc, USDC_DECIMALS);
+    // TipCard sends the full tip amount as two ERC20 transfers.
+    // Use the selected token's own decimals so DIEM is handled as 18 decimals.
+    const { recipientAmount } = splitTipAmount(
+      amountUsdc,
+      tokenConfig.decimals
+    );
 
     let matched = false;
     for (const log of receipt.logs) {
-      if (log.address.toLowerCase() !== USDC_ADDRESS.toLowerCase()) continue;
+      if (log.address.toLowerCase() !== tokenConfig.address.toLowerCase()) continue;
       try {
         const decoded = decodeEventLog({
           abi: [TRANSFER_EVENT],
@@ -125,9 +131,24 @@ export async function POST(req: Request) {
 
     if (!matched) {
       return Response.json(
-        { ok: false, error: "no matching USDC transfer found in transaction" },
+        {
+          ok: false,
+          error: `no matching ${selectedToken} transfer found in transaction`,
+        },
         { status: 400 }
       );
+    }
+
+    // Idempotency is recorded only after the transaction has been fully
+    // verified. An invalid first attempt must not poison a later valid retry.
+    const isNewTx = await redis.set(`tiphistory:seen:${txHash}`, "1", {
+      nx: true,
+      ex: 86400,
+    });
+
+    if (!isNewTx) {
+      console.warn("record-tip-history: duplicate txHash ignored", txHash);
+      return Response.json({ ok: true, duplicate: true });
     }
 
     const timestamp = Date.now();

@@ -112,7 +112,6 @@ export function TipCard({
     if (
       resolvedTxHash &&
       address &&
-      tokenSymbol === "USDC" &&
       !historyRecordedRef.current
     ) {
       historyRecordedRef.current = true;
@@ -273,8 +272,8 @@ export function TipCard({
         100% onchain. Delivered to {recipientLabel} in seconds.
       </p>
 
-      {/* Token selector — USDC is the default; VVV is offered as a
-          secondary option, not the headline currency. */}
+      {/* Token selector — USDC remains the default; VVV and DIEM are
+          optional secondary Venice/ecosystem payment tokens. */}
       <div className="mt-4 flex gap-2">
         {TIPPABLE_TOKENS.map((t) => (
           <button
@@ -285,6 +284,9 @@ export function TipCard({
             }`}
           >
             {t.symbol}
+            {t.symbol === "DIEM" && (
+              <span className="ml-1 text-[9px] text-white/35">optional</span>
+            )}
           </button>
         ))}
       </div>
@@ -350,7 +352,10 @@ export function TipCard({
       </div>
 
       <p className="mt-3 text-center text-[11px] leading-relaxed text-white/35">
-        A {PLATFORM_FEE_BPS / 100}% platform fee supports development —
+        {tokenSymbol === "DIEM"
+          ? "DIEM is an optional Venice ecosystem token. A "
+          : "A "}
+        {PLATFORM_FEE_BPS / 100}% platform fee supports development —
         shown above, nothing hidden.
       </p>
 
