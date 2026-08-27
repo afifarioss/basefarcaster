@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
           typeof message.content === "string"
       )
       .slice(-12)
-      .map((message) => ({
+      .map((message: { role: string; content: string }) => ({
         role: message.role,
         content: message.content.slice(0, 4000),
       }));
