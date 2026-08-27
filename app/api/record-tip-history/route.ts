@@ -1,9 +1,13 @@
 import { Redis } from "@upstash/redis";
+import { isAddress } from "viem";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL as string,
   token: process.env.KV_REST_API_TOKEN as string,
 });
+
+const MAX_REASONABLE_USDC = 1_000_000;
+const TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
 
 export async function POST(req: Request) {
   try {
@@ -12,9 +16,14 @@ export async function POST(req: Request) {
     if (
       typeof from !== "string" ||
       typeof to !== "string" ||
+      !isAddress(from) ||
+      !isAddress(to) ||
       typeof amountUsdc !== "number" ||
+      !Number.isFinite(amountUsdc) ||
       amountUsdc <= 0 ||
-      typeof txHash !== "string"
+      amountUsdc > MAX_REASONABLE_USDC ||
+      typeof txHash !== "string" ||
+      !TX_HASH_RE.test(txHash)
     ) {
       return Response.json({ ok: false }, { status: 400 });
     }
