@@ -128,12 +128,21 @@ function HomeContent() {
           <ShareButton className="btn-secondary w-full max-w-md" />
           <ZapWidget />
           <AgentExplanation />
-          <a
-            href="/stake"
-            className="chip w-full max-w-md !py-2.5 text-xs text-white/50"
-          >
-            Also stake VVV (powered by Venice) →
-          </a>
+          <div className="w-full max-w-md space-y-2">
+            <a
+              href="/stake"
+              className="chip block w-full !py-2.5 text-center text-xs text-white/50"
+            >
+              Stake VVV with Venice →
+            </a>
+
+            <a
+              href="/venice"
+              className="chip block w-full !py-2.5 text-center text-xs text-white/50"
+            >
+              Explore the Venice ecosystem →
+            </a>
+          </div>
         </div>
       </section>
 
