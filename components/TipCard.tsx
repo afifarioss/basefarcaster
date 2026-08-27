@@ -143,8 +143,13 @@ export function TipCard({
 
     if (!isConnected) {
       const preferred =
-        connectors.find((c) => c.id === "farcasterMiniApp") ?? connectors[0];
-      connect({ connector: preferred });
+        connectors.find((c) => c.id === "baseAccount") ??
+        connectors.find((c) => c.id === "farcasterMiniApp") ??
+        connectors[0];
+
+      if (preferred) {
+        connect({ connector: preferred });
+      }
       return;
     }
 

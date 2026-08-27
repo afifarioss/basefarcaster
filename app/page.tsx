@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { isAddress } from "viem";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
@@ -41,7 +41,7 @@ const STEPS = [
 ];
 
 function HomeContent() {
-  const { setFrameReady, isFrameReady, context } = useMiniKit();
+  const { context } = useMiniKit();
   const isNotificationLaunch = context?.location?.type === "notification";
   const tipRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
@@ -71,10 +71,6 @@ function HomeContent() {
   // Only a real, resolved recipient — never the "the creator" fallback —
   // is allowed to override the Hero headline.
   const heroRecipientLabel = resolvedUser?.displayName ?? labelParam;
-
-  useEffect(() => {
-    if (!isFrameReady) setFrameReady();
-  }, [isFrameReady, setFrameReady]);
 
   return (
     <main className="relative min-h-screen bg-noise-grid">

@@ -20,6 +20,7 @@ export async function GET() {
   const appConfig = {
     version: "1",
     name: APP_SHORT_NAME,
+    requiredChains: ["eip155:8453"],
     iconUrl: `${APP_URL}/api/icon`,
     homeUrl: APP_URL,
     imageUrl: `${APP_URL}/api/og`,

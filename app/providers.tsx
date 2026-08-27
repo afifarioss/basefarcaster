@@ -4,7 +4,7 @@ import { type ReactNode, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { base } from "wagmi/chains";
-import { coinbaseWallet, injected, metaMask } from "wagmi/connectors";
+import { baseAccount, coinbaseWallet, injected, metaMask } from "wagmi/connectors";
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 import { OnchainKitProvider } from "@coinbase/onchainkit";
 import { APP_NAME } from "@/lib/constants";
@@ -15,9 +15,13 @@ const wagmiConfig = createConfig({
     [base.id]: http(),
   },
   connectors: [
-    // Auto-connects when running inside a Farcaster client (Warpcast, Base app, etc).
+    // Native Base Account connector for the Base App.
+    baseAccount({
+      appName: APP_NAME,
+    }),
+    // Auto-connects when running inside a Farcaster client (Warpcast, etc).
     farcasterMiniApp(),
-    // Base Smart Wallet + Coinbase Wallet, with in-app + popup fallback.
+    // Coinbase Wallet / Smart Wallet fallback.
     coinbaseWallet({
       appName: APP_NAME,
       preference: "all",
