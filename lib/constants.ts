@@ -119,7 +119,7 @@ export const APP_SHORT_NAME = "BaseZap";
  * value in the Base manifest.
  */
 export const APP_DESCRIPTION =
-  "Instant USDC funding for Farcaster builders. Paste a username or cast link, pick an amount, and send USDC on Base.";
+  "Send USDC, VVV, or DIEM directly to Base users and Farcaster users. Built on Base × Farcaster.";
 
 /**
  * Short OG/social description.
@@ -127,7 +127,7 @@ export const APP_DESCRIPTION =
  * Keep this under 100 characters.
  */
 export const APP_OG_DESCRIPTION =
-  "Instant USDC funding for Farcaster builders on Base. Non-custodial and fast.";
+  "Send USDC, VVV, or DIEM to Base and Farcaster users. Fast, transparent, and onchain.";
 
 /**
  * Application tagline.
@@ -135,7 +135,7 @@ export const APP_OG_DESCRIPTION =
  * Keep this under 30 characters.
  */
 export const APP_TAGLINE =
-  "Zap real USDC to builders";
+  "Send tokens. Build onchain.";
 
 /**
  * Public application URL.
