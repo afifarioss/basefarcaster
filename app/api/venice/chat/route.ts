@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-const VENICE_URL = "https://api.venice.ai/api/v1/chat/completions"\;
+const VENICE_URL = "https://api.venice.ai/api/v1/chat/completions";
 const VENICE_MODEL = process.env.VENICE_CHAT_MODEL || "qwen3-4b";
 
 const SYSTEM_PROMPT = `
