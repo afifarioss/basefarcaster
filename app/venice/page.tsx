@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { VeniceAttribution } from "@/components/VeniceAttribution";
+import { VeniceAssistant } from "@/components/VeniceAssistant";
 import { WalletConnect } from "@/components/WalletConnect";
 import { Footer } from "@/components/Footer";
 import { APP_NAME, DIEM_ADDRESS, VVV_ADDRESS } from "@/lib/constants";
@@ -64,6 +65,8 @@ export default function VenicePage() {
           </div>
 
           <VeniceAttribution />
+
+          <VeniceAssistant />
 
           <div className="grid w-full gap-3">
             <div className="glass-card p-4">
