@@ -116,14 +116,24 @@ export async function POST(req: NextRequest) {
         `VENICE CHAT: API returned ${response.status}: ${errorText.slice(0, 500)}`
       );
 
+      if (response.status === 402) {
+        return Response.json(
+          {
+            code: "venice_credit_limited",
+            error:
+              "Venice AI is in limited preview on this deployment. The Venice connection is live, but this deployment currently has no available inference credits.",
+          },
+          { status: 503 }
+        );
+      }
+
       return Response.json(
         {
+          code: response.status === 401 ? "venice_auth_failed" : "venice_unavailable",
           error:
             response.status === 401
-              ? "Venice API authentication failed."
-              : response.status === 402
-                ? "Venice API credits are unavailable."
-                : "Venice Assistant is temporarily unavailable.",
+              ? "The Venice AI connection needs attention."
+              : "Venice AI is temporarily unavailable.",
         },
         { status: response.status === 429 ? 429 : 502 }
       );

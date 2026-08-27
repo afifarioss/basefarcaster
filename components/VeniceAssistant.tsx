@@ -18,6 +18,7 @@ export function VeniceAssistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [previewLimited, setPreviewLimited] = useState(false);
 
   async function sendMessage(event?: FormEvent) {
     event?.preventDefault();
@@ -33,6 +34,7 @@ export function VeniceAssistant() {
     setMessages(nextMessages);
     setInput("");
     setError("");
+    setPreviewLimited(false);
     setLoading(true);
 
     try {
@@ -49,6 +51,11 @@ export function VeniceAssistant() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (data?.code === "venice_credit_limited") {
+          setPreviewLimited(true);
+          return;
+        }
+
         throw new Error(data?.error || "Venice Assistant unavailable.");
       }
 
@@ -75,10 +82,10 @@ export function VeniceAssistant() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-base-blueLight/80">
-            Powered by Venice AI
+            Venice × BaseZap
           </p>
           <h2 className="mt-1 font-display text-lg font-bold text-white">
-            Venice Assistant
+            Venice AI Assistant
           </h2>
         </div>
 
@@ -88,7 +95,8 @@ export function VeniceAssistant() {
       </div>
 
       <p className="mt-2 text-xs leading-relaxed text-white/40">
-        Ask about BaseZap, VVV, DIEM, staking, or the Venice integration.
+        Explore what happens when Venice intelligence meets social payments,
+        VVV, DIEM, Farcaster, and Base.
       </p>
 
       {messages.length === 0 && (
@@ -123,6 +131,48 @@ export function VeniceAssistant() {
               <p className="whitespace-pre-wrap">{message.content}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {previewLimited && (
+        <div className="mt-4 rounded-xl border border-white/[0.08] bg-black/20 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-base-blueLight/80">
+            Limited preview
+          </p>
+
+          <p className="mt-2 text-xs font-semibold leading-relaxed text-white/80">
+            Private AI. Open economy.
+          </p>
+
+          <p className="mt-2 text-[11px] leading-relaxed text-white/45">
+            The Venice connection is live. This deployment currently has no
+            available Venice inference credits, so the assistant is temporarily
+            paused.
+          </p>
+
+          <p className="mt-2 text-[11px] leading-relaxed text-white/45">
+            BaseZap continues building the social layer around the Venice
+            ecosystem: VVV, DIEM, Farcaster identity, and fast settlement on
+            Base.
+          </p>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <a
+              href="https://venice.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg border border-white/[0.08] px-3 py-2 text-center text-[10px] font-semibold text-white/55 transition hover:text-white"
+            >
+              Explore Venice ↗
+            </a>
+
+            <a
+              href="/"
+              className="rounded-lg border border-white/[0.08] px-3 py-2 text-center text-[10px] font-semibold text-white/55 transition hover:text-white"
+            >
+              Explore BaseZap →
+            </a>
+          </div>
         </div>
       )}
 
