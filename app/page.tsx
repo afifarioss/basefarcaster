@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { isAddress } from "viem";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
@@ -41,7 +41,7 @@ const STEPS = [
 ];
 
 function HomeContent() {
-  const { setFrameReady, isFrameReady, context } = useMiniKit();
+  const { context } = useMiniKit();
   const isNotificationLaunch = context?.location?.type === "notification";
   const tipRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
@@ -71,10 +71,6 @@ function HomeContent() {
   // Only a real, resolved recipient — never the "the creator" fallback —
   // is allowed to override the Hero headline.
   const heroRecipientLabel = resolvedUser?.displayName ?? labelParam;
-
-  useEffect(() => {
-    if (!isFrameReady) setFrameReady();
-  }, [isFrameReady, setFrameReady]);
 
   return (
     <main className="relative min-h-screen bg-noise-grid">
@@ -132,12 +128,21 @@ function HomeContent() {
           <ShareButton className="btn-secondary w-full max-w-md" />
           <ZapWidget />
           <AgentExplanation />
-          <a
-            href="/stake"
-            className="chip w-full max-w-md !py-2.5 text-xs text-white/50"
-          >
-            Also stake VVV (powered by Venice) →
-          </a>
+          <div className="w-full max-w-md space-y-2">
+            <a
+              href="/stake"
+              className="chip block w-full !py-2.5 text-center text-xs text-white/50"
+            >
+              Stake VVV with Venice →
+            </a>
+
+            <a
+              href="/venice"
+              className="chip block w-full !py-2.5 text-center text-xs text-white/50"
+            >
+              Explore the Venice ecosystem →
+            </a>
+          </div>
         </div>
       </section>
 

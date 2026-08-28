@@ -60,7 +60,7 @@ Add to your MCP client config:
 
 | Variable | Default | What it's for |
 |---|---|---|
-| `FEE_WALLET` | placeholder burn address | The wallet `build_tip_calldata` routes the 5% platform fee to |
+| `FEE_WALLET` | placeholder burn address | The wallet `build_tip_calldata` routes the 2% platform fee to |
 
 ## Example: quoting and building a tip
 
@@ -68,17 +68,17 @@ Add to your MCP client config:
 > get_tip_quote({ amount_usdc: 5 })
 {
   "total_usdc": 5,
-  "creator_receives_usdc": 4.75,
-  "platform_fee_usdc": 0.25,
-  "platform_fee_bps": 500
+  "creator_receives_usdc": 4.9,
+  "platform_fee_usdc": 0.1,
+  "platform_fee_bps": 200
 }
 
 > build_tip_calldata({ recipient: "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918", amount_usdc: 5 })
 {
   "chain_id": 8453,
   "calls": [
-    { "to": "0x8335...a913", "data": "0xa9059cbb...", "description": "Transfer 4.75 USDC to creator" },
-    { "to": "0x8335...a913", "data": "0xa9059cbb...", "description": "Transfer 0.25 USDC platform fee" }
+    { "to": "0x8335...a913", "data": "0xa9059cbb...", "description": "Transfer 4.9 USDC to creator" },
+    { "to": "0x8335...a913", "data": "0xa9059cbb...", "description": "Transfer 0.1 USDC platform fee" }
   ],
   "note": "UNSIGNED calldata. ... pass these calls to a wallet-connected client ..."
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useAccount, useConnect, useReadContract } from "wagmi";
+import { useAccount, useConnect, useReadContract, useSwitchChain } from "wagmi";
 import { useCallsStatus, useCapabilities, useSendCalls } from "wagmi/experimental";
 import { parseUnits, formatUnits, encodeFunctionData } from "viem";
+import { base } from "wagmi/chains";
 import { ERC20_ABI, VVV_ADDRESS, VVV_STAKING_ADDRESS } from "@/lib/constants";
 
 // Only the functions we actually call for staking
@@ -23,6 +24,7 @@ const STAKING_ABI = [
 export function StakeCard() {
   const { address, isConnected, chainId } = useAccount();
   const { connectors, connect } = useConnect();
+  const { switchChain, isPending: isSwitching } = useSwitchChain();
   const { sendCalls, isPending } = useSendCalls();
   const [amount, setAmount] = useState("");
   const [callsId, setCallsId] = useState<string | undefined>(undefined);
@@ -64,16 +66,22 @@ export function StakeCard() {
   });
 
   const decimals = vvvDecimals ?? 18;
+  const onBase = chainId === base.id;
 
   async function handleStake() {
-    if (!amount || !address) return;
-
     if (!isConnected) {
       const preferred =
         connectors.find((c) => c.id === "farcasterMiniApp") ?? connectors[0];
-      connect({ connector: preferred });
+      if (preferred) connect({ connector: preferred });
       return;
     }
+
+    if (!onBase) {
+      switchChain({ chainId: base.id });
+      return;
+    }
+
+    if (!amount || !address) return;
 
     setStatus("sending");
     setErrorMsg("");
@@ -156,8 +164,6 @@ export function StakeCard() {
     }
   }, [callsStatus?.status, status]);
 
-  if (!isConnected) return null;
-
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
       <div className="flex items-center justify-between text-xs text-white/40">
@@ -167,29 +173,61 @@ export function StakeCard() {
         )}
       </div>
 
-      <input
-        type="number"
-        inputMode="decimal"
-        placeholder="Amount to stake"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        disabled={status !== "idle"}
-        className="w-full rounded-lg border border-white/[0.08] bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-white/20 disabled:opacity-50"
-      />
+      {!isConnected ? (
+        <>
+          <p className="text-center text-sm leading-relaxed text-white/50">
+            Connect your wallet to stake VVV on Base.
+          </p>
+          <button
+            onClick={handleStake}
+            disabled={!connectors.length}
+            className="w-full rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-white/90 disabled:opacity-40"
+          >
+            Connect wallet to stake
+          </button>
+        </>
+      ) : !onBase ? (
+        <>
+          <p className="text-center text-sm leading-relaxed text-white/50">
+            VVV staking is available on Base Mainnet.
+          </p>
+          <button
+            onClick={handleStake}
+            disabled={isSwitching}
+            className="w-full rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-white/90 disabled:opacity-40"
+          >
+            {isSwitching ? "Switching to Base…" : "Switch to Base"}
+          </button>
+        </>
+      ) : (
+        <>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="any"
+            placeholder="Amount to stake"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            disabled={status !== "idle"}
+            className="w-full rounded-lg border border-white/[0.08] bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-white/20 disabled:opacity-50"
+          />
 
-      <button
-        onClick={handleStake}
-        disabled={!amount || status !== "idle" || isPending}
-        className="w-full rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-white/90 disabled:opacity-40"
-      >
-        {isPending
-          ? `Staking... (${Math.ceil((callsStatus?.status === "pending" ? 2 : 1) * 1000 / 1000)}s)`
-          : status === "success"
-          ? "Staked ✓"
-          : status === "error"
-          ? "Error"
-          : "Stake VVV"}
-      </button>
+          <button
+            onClick={handleStake}
+            disabled={!amount || status !== "idle" || isPending}
+            className="w-full rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-white/90 disabled:opacity-40"
+          >
+            {isPending
+              ? "Staking…"
+              : status === "success"
+              ? "Staked ✓"
+              : status === "error"
+              ? "Try again"
+              : "Stake VVV"}
+          </button>
+        </>
+      )}
 
       {errorMsg && (
         <p className="text-center text-[10px] text-red-400">{errorMsg}</p>

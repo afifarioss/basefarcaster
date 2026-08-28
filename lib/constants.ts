@@ -42,6 +42,17 @@ export const VVV_ADDRESS: `0x${string}` =
   "0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf";
 
 /**
+ * Venice DIEM token on Base Mainnet.
+ *
+ * DIEM is an optional Venice ecosystem token/payment method.
+ * It uses 18 decimals.
+ */
+export const DIEM_ADDRESS: `0x${string}` =
+  "0xf4d97f2da56e8c3098f3a8d538db630a2606a024";
+
+export const DIEM_DECIMALS = 18;
+
+/**
  * Tokens supported for tipping.
  *
  * USDC is the primary/default token.
@@ -57,6 +68,11 @@ export const TIPPABLE_TOKENS = [
     symbol: "VVV",
     address: VVV_ADDRESS,
     decimals: null,
+  },
+  {
+    symbol: "DIEM",
+    address: DIEM_ADDRESS,
+    decimals: DIEM_DECIMALS,
   },
 ] as const;
 
@@ -103,7 +119,7 @@ export const APP_SHORT_NAME = "BaseZap";
  * value in the Base manifest.
  */
 export const APP_DESCRIPTION =
-  "Instant USDC funding for Farcaster builders. Paste a username or cast link, pick an amount, and send USDC on Base.";
+  "Send USDC, VVV, or DIEM directly to Base users and Farcaster users. Built on Base × Farcaster.";
 
 /**
  * Short OG/social description.
@@ -111,7 +127,7 @@ export const APP_DESCRIPTION =
  * Keep this under 100 characters.
  */
 export const APP_OG_DESCRIPTION =
-  "Instant USDC funding for Farcaster builders on Base. Non-custodial and fast.";
+  "Send USDC, VVV, or DIEM to Base and Farcaster users. Fast, transparent, and onchain.";
 
 /**
  * Application tagline.
@@ -119,7 +135,7 @@ export const APP_OG_DESCRIPTION =
  * Keep this under 30 characters.
  */
 export const APP_TAGLINE =
-  "Zap real USDC to builders";
+  "Send tokens. Build onchain.";
 
 /**
  * Public application URL.

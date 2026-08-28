@@ -6,6 +6,7 @@ import { formatAddress } from "@/lib/utils";
 import { USDC_ADDRESS } from "@/lib/constants";
 
 const CONNECTOR_LABELS: Record<string, string> = {
+  baseAccount: "Base Account",
   farcasterMiniApp: "Farcaster Wallet",
   coinbaseWalletSDK: "Coinbase / Base Smart Wallet",
   metaMaskSDK: "MetaMask",
