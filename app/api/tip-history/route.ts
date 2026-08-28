@@ -20,10 +20,37 @@ type TipRecord = {
   timestamp: number;
 };
 
+type FarcasterIdentity = {
+  username: string;
+  displayName: string;
+  pfpUrl: string;
+};
+
+function parseTipRecord(value: unknown): TipRecord | null {
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as TipRecord;
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (value && typeof value === "object") {
+    return value as TipRecord;
+  }
+
+  return null;
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const page = Math.max(0, parseInt(searchParams.get("page") ?? "0", 10) || 0);
+    const page = Math.max(
+      0,
+      parseInt(searchParams.get("page") ?? "0", 10) || 0
+    );
+
     const start = page * PAGE_SIZE;
     const end = start + PAGE_SIZE - 1;
 
@@ -32,58 +59,76 @@ export async function GET(req: Request) {
       redis.zcard("tips:history"),
     ]);
 
-    const tips: TipRecord[] = (rawMembers as string[])
-      .map((m) => {
-        try {
-          return JSON.parse(m) as TipRecord;
-        } catch {
-          return null;
-        }
-      })
-      .filter((t): t is TipRecord => t !== null);
+    const tips: TipRecord[] = (rawMembers as unknown[])
+      .map(parseTipRecord)
+      .filter((t): t is TipRecord => {
+        return (
+          t !== null &&
+          typeof t.from === "string" &&
+          typeof t.to === "string" &&
+          typeof t.amountUsdc === "number" &&
+          typeof t.txHash === "string" &&
+          typeof t.timestamp === "number"
+        );
+      });
 
-    // Batch-resolve Farcaster identities for every address on this page.
     const addresses = Array.from(
-      new Set(tips.flatMap((t) => [t.from, t.to]))
+      new Set(
+        tips
+          .flatMap((t) => [t.from, t.to])
+          .map((address) => address.toLowerCase())
+      )
     );
 
-    const identities = new Map<
-      string,
-      { username: string; displayName: string; pfpUrl: string }
-    >();
-
+    const identities = new Map<string, FarcasterIdentity>();
     const apiKey = process.env.NEYNAR_API_KEY;
 
     if (apiKey && addresses.length > 0) {
       try {
-        const res = await fetch(
-          `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${addresses.join(
-            ","
-          )}`,
-          {
-            headers: {
-              accept: "application/json",
-              "x-api-key": apiKey,
-            },
-            next: { revalidate: 60 },
-          }
+        const url = new URL(
+          "https://api.neynar.com/v2/farcaster/user/bulk-by-address"
         );
+
+        url.searchParams.set("addresses", addresses.join(","));
+
+        const res = await fetch(url, {
+          headers: {
+            accept: "application/json",
+            "x-api-key": apiKey,
+          },
+          next: { revalidate: 60 },
+        });
 
         if (res.ok) {
           const data = await res.json();
-          for (const addr of addresses) {
-            const match = data?.[addr]?.[0];
-            if (match) {
-              identities.set(addr, {
-                username: match.username,
-                displayName: match.display_name,
-                pfpUrl: match.pfp_url,
-              });
-            }
+
+          for (const [key, users] of Object.entries(data ?? {})) {
+            const match = Array.isArray(users) ? users[0] : null;
+
+            if (!match || typeof match !== "object") continue;
+
+            const user = match as {
+              username?: string;
+              display_name?: string;
+              pfp_url?: string;
+            };
+
+            if (!user.username) continue;
+
+            identities.set(key.toLowerCase(), {
+              username: user.username,
+              displayName: user.display_name ?? user.username,
+              pfpUrl: user.pfp_url ?? "",
+            });
           }
+        } else {
+          console.warn(
+            "Tip history identity lookup failed:",
+            res.status
+          );
         }
-      } catch {
-        // Identity resolution is best-effort — falls back to raw address below.
+      } catch (err) {
+        console.warn("Tip history identity lookup error:", err);
       }
     }
 
@@ -92,11 +137,18 @@ export async function GET(req: Request) {
       amountUsdc: t.amountUsdc,
       tokenSymbol: t.tokenSymbol,
       timestamp: t.timestamp,
-      from: { address: t.from, ...(identities.get(t.from) ?? {}) },
-      to: { address: t.to, ...(identities.get(t.to) ?? {}) },
+      from: {
+        address: t.from,
+        ...(identities.get(t.from.toLowerCase()) ?? {}),
+      },
+      to: {
+        address: t.to,
+        ...(identities.get(t.to.toLowerCase()) ?? {}),
+      },
     }));
 
     return Response.json({
+      success: true,
       tips: withIdentity,
       page,
       pageSize: PAGE_SIZE,
@@ -105,8 +157,17 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     console.error("Tip history API error:", err);
+
     return Response.json(
-      { tips: [], page: 0, pageSize: PAGE_SIZE, total: 0, hasMore: false, error: true },
+      {
+        success: false,
+        tips: [],
+        page: 0,
+        pageSize: PAGE_SIZE,
+        total: 0,
+        hasMore: false,
+        error: true,
+      },
       { status: 200 }
     );
   }
