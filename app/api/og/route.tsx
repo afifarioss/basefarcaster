@@ -68,7 +68,7 @@ async function generateVeniceBackground(prompt: string): Promise<string | null> 
     clearTimeout(timeout);
     if (!res.ok) {
       const errText = await res.text();
-      console.error(`VENICE: API returned ${res.status}: ${errText.slice(0, 300)}`);
+      console.warn(`VENICE: API returned ${res.status}: ${errText.slice(0, 300)}`);
       return null;
     }
 

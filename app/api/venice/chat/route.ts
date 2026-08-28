@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
 
-      console.error(
+      console.warn(
         `VENICE CHAT: API returned ${response.status}: ${errorText.slice(0, 500)}`
       );
 
