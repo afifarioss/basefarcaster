@@ -1,9 +1,14 @@
 import { Redis } from "@upstash/redis";
+import { isAddress } from "viem";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL as string,
   token: process.env.KV_REST_API_TOKEN as string,
 });
+
+// Sanity ceiling — not a business rule, just a guard against obviously
+// fabricated/junk values reaching the public leaderboard.
+const MAX_REASONABLE_USDC = 1_000_000;
 
 export async function POST(req: Request) {
   try {
@@ -12,8 +17,12 @@ export async function POST(req: Request) {
     if (
       typeof from !== "string" ||
       typeof to !== "string" ||
+      !isAddress(from) ||
+      !isAddress(to) ||
       typeof amountUsdc !== "number" ||
+      !Number.isFinite(amountUsdc) ||
       amountUsdc <= 0 ||
+      amountUsdc > MAX_REASONABLE_USDC ||
       typeof callsId !== "string" ||
       callsId.length === 0
     ) {

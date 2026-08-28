@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@coinbase/cdp-sdk": "^1.55.0",
     "@coinbase/onchainkit": "^1.0.0",
     "@coinbase/x402": "^2.1.0",
     "@farcaster/miniapp-sdk": "^0.2.3",

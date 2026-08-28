@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveBasename } from "@/lib/basename";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const name = req.nextUrl.searchParams.get("name");
@@ -9,6 +10,7 @@ export async function GET(req: NextRequest) {
   if (!name) {
     return NextResponse.json(
       {
+        ok: false,
         error: "Missing name",
         example: "/api/basename/resolve?name=afifarioss.base.eth",
       },
@@ -21,6 +23,7 @@ export async function GET(req: NextRequest) {
   if (!result) {
     return NextResponse.json(
       {
+        ok: false,
         error: "Basename not found or has no resolved address",
         name,
       },

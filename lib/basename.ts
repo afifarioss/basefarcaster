@@ -92,8 +92,7 @@ export async function resolveBasename(
 
     if (
       !isAddress(address) ||
-      address ===
-        "0x0000000000000000000000000000000000000000"
+      address === "0x0000000000000000000000000000000000000000"
     ) {
       return null;
     }

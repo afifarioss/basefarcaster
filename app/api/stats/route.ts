@@ -27,12 +27,13 @@ const client = createPublicClient({
   transport: http(),
 });
 
-// Base produces a block roughly every 2 seconds, so ~43,200 blocks ≈ 24h.
+// Base produces a block roughly every 2 seconds, so ~43,200 blocks is about 24h.
 const LOOKBACK_BLOCKS = BigInt(43_200);
 const WINDOW_HOURS = 24;
 
-// Base's public RPC caps eth_getLogs at a 10,000-block range per call.
-const CHUNK_SIZE = BigInt(10_000);
+// Base RPC providers commonly cap eth_getLogs at a 10,000-block range.
+// Use 9,000 as a safety margin below that cap.
+const CHUNK_SIZE = BigInt(9_000);
 
 const TRANSFER_EVENT = parseAbiItem(
   "event Transfer(address indexed from, address indexed to, uint256 value)"

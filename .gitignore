@@ -36,3 +36,13 @@ next-env.d.ts
 .agents/
 .claude/
 skills-lock.json
+
+.neynar_key.txt
+.env
+.env.local
+.env.*.local
+
+.neynar_key.txt
+.env
+.env.local
+.env.*.local
