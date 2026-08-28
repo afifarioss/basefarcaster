@@ -31,6 +31,38 @@ const client = createPublicClient({
 const LOOKBACK_BLOCKS = BigInt(43_200);
 const WINDOW_HOURS = 24;
 
+// Base's public RPC caps eth_getLogs at a 10,000-block range per call.
+const CHUNK_SIZE = BigInt(10_000);
+
+const TRANSFER_EVENT = parseAbiItem(
+  "event Transfer(address indexed from, address indexed to, uint256 value)"
+);
+
+async function fetchLogsChunked(fromBlock: bigint, toBlock: bigint) {
+  const allLogs = [];
+  let chunkStart = fromBlock;
+
+  while (chunkStart <= toBlock) {
+    const chunkEnd =
+      chunkStart + CHUNK_SIZE - BigInt(1) > toBlock
+        ? toBlock
+        : chunkStart + CHUNK_SIZE - BigInt(1);
+
+    const chunkLogs = await client.getLogs({
+      address: USDC_ADDRESS,
+      event: TRANSFER_EVENT,
+      args: { to: PLATFORM_FEE_WALLET },
+      fromBlock: chunkStart,
+      toBlock: chunkEnd,
+    });
+
+    allLogs.push(...chunkLogs);
+    chunkStart = chunkEnd + BigInt(1);
+  }
+
+  return allLogs;
+}
+
 export async function GET() {
   try {
     const latest = await client.getBlockNumber();
@@ -38,17 +70,7 @@ export async function GET() {
     const fromBlock =
       latest > LOOKBACK_BLOCKS ? latest - LOOKBACK_BLOCKS : BigInt(0);
 
-    const logs = await client.getLogs({
-      address: USDC_ADDRESS,
-      event: parseAbiItem(
-        "event Transfer(address indexed from, address indexed to, uint256 value)"
-      ),
-      args: {
-        to: PLATFORM_FEE_WALLET,
-      },
-      fromBlock,
-      toBlock: latest,
-    });
+    const logs = await fetchLogsChunked(fromBlock, latest);
 
     const tipCount = logs.length;
 
