@@ -6,7 +6,7 @@ import { useAccount, useConnect, useReadContract } from "wagmi";
 // point as of wagmi v2.13. Check the wagmi changelog when upgrading —
 // this may move to the root `wagmi` export in a future major version.
 import { useCallsStatus, useCapabilities, useSendCalls } from "wagmi/experimental";
-import { encodeFunctionData } from "viem";
+import { encodeFunctionData, formatUnits } from "viem";
 import {
   BASE_BUILDER_CODE_SUFFIX,
   ERC20_ABI,
@@ -104,10 +104,20 @@ export function TipCard({
     return selected;
   }, [isCustom, custom, selected]);
 
+  const { fee, recipientAmount } = useMemo(
+    () => splitTipAmount(amount || 0, decimals),
+    [amount, decimals]
+  );
+
   // Records the tip for the public history feed once the real onchain tx
   // hash resolves (callsId/onSuccess only gives a bundle id, not a hash).
   // Guarded by a ref so it fires exactly once per tip, not on every
   // re-render while useCallsStatus keeps polling.
+  //
+  // Best-effort but retried with backoff — the tip already succeeded
+  // onchain by this point, so a transient network blip here shouldn't
+  // silently drop it from history/leaderboard. Still never surfaced to
+  // the tipper regardless of outcome, per the original design intent.
   useEffect(() => {
     if (
       resolvedTxHash &&
@@ -115,27 +125,36 @@ export function TipCard({
       !historyRecordedRef.current
     ) {
       historyRecordedRef.current = true;
-      fetch("/api/record-tip-history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: address,
-          to: recipient,
-          amountUsdc: amount,
-          txHash: resolvedTxHash,
-          tokenSymbol,
-        }),
-      }).catch(() => {
-        // History recording is best-effort — never surface this to the tipper.
+
+      const payload = JSON.stringify({
+        from: address,
+        to: recipient,
+        amountUsdc: amount,
+        txHash: resolvedTxHash,
+        tokenSymbol,
       });
+
+      const recordWithRetry = async (attempt = 0) => {
+        try {
+          const res = await fetch("/api/record-tip-history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload,
+          });
+          if (!res.ok && attempt < 2) {
+            setTimeout(() => recordWithRetry(attempt + 1), 1000 * 2 ** attempt);
+          }
+        } catch {
+          if (attempt < 2) {
+            setTimeout(() => recordWithRetry(attempt + 1), 1000 * 2 ** attempt);
+          }
+        }
+      };
+
+      recordWithRetry();
     }
   }, [resolvedTxHash, address, tokenSymbol, recipient, amount]);
 
-
-  const { fee, recipientAmount } = useMemo(
-    () => splitTipAmount(amount || 0, decimals),
-    [amount, decimals]
-  );
 
   async function handleTip() {
     if (amount <= 0) return;
@@ -332,14 +351,14 @@ export function TipCard({
         <div className="flex justify-between text-white/55">
           <span>{recipientLabel} receives</span>
           <span className="text-white/85">
-            {formatUsdc(amount ? amount * (1 - PLATFORM_FEE_BPS / 10000) : 0)}{" "}
+            {formatUsdc(amount ? Number(formatUnits(recipientAmount, decimals)) : 0)}{" "}
             {tokenSymbol}
           </span>
         </div>
         <div className="flex justify-between text-white/40">
           <span>Platform fee ({PLATFORM_FEE_BPS / 100}%)</span>
           <span>
-            {formatUsdc(amount ? amount * (PLATFORM_FEE_BPS / 10000) : 0)}{" "}
+            {formatUsdc(amount ? Number(formatUnits(fee, decimals)) : 0)}{" "}
             {tokenSymbol}
           </span>
         </div>
