@@ -32,11 +32,11 @@ const frameEmbed = {
 };
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} — Real USDC Tips on Base`,
+  title: `${APP_NAME} — Payments on Base`,
   description: APP_DESCRIPTION,
   metadataBase: new URL(APP_URL),
   openGraph: {
-    title: `${APP_NAME} — Real USDC Tips on Base`,
+    title: `${APP_NAME} — Payments on Base`,
     description: APP_DESCRIPTION,
     url: APP_URL,
     siteName: APP_NAME,
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${APP_NAME} — Real USDC Tips on Base`,
+    title: `${APP_NAME} — Payments on Base`,
     description: APP_DESCRIPTION,
   },
   other: {
