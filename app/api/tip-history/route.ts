@@ -21,31 +21,63 @@ type TipRecord = {
 };
 
 type FarcasterIdentity = {
+  fid: number;
   username: string;
   displayName: string;
   pfpUrl: string;
 };
 
 function parseTipRecord(value: unknown): TipRecord | null {
+  let parsed: unknown = value;
+
   if (typeof value === "string") {
     try {
-      const parsed = JSON.parse(value) as TipRecord;
-      return parsed && typeof parsed === "object" ? parsed : null;
+      parsed = JSON.parse(value);
     } catch {
       return null;
     }
   }
 
-  if (value && typeof value === "object") {
-    return value as TipRecord;
+  if (!parsed || typeof parsed !== "object") return null;
+
+  const record = parsed as Record<string, unknown>;
+
+  const from = typeof record.from === "string" ? record.from : "";
+  const to = typeof record.to === "string" ? record.to : "";
+  const txHash = typeof record.txHash === "string" ? record.txHash : "";
+
+  const amountUsdc = Number(record.amountUsdc);
+  const timestamp = Number(record.timestamp);
+
+  const tokenSymbol =
+    typeof record.tokenSymbol === "string" && record.tokenSymbol
+      ? record.tokenSymbol
+      : "USDC";
+
+  if (
+    !from ||
+    !to ||
+    !txHash ||
+    !Number.isFinite(amountUsdc) ||
+    !Number.isFinite(timestamp)
+  ) {
+    return null;
   }
 
-  return null;
+  return {
+    from,
+    to,
+    amountUsdc,
+    txHash,
+    tokenSymbol,
+    timestamp,
+  };
 }
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+
     const page = Math.max(
       0,
       parseInt(searchParams.get("page") ?? "0", 10) || 0
@@ -61,16 +93,7 @@ export async function GET(req: Request) {
 
     const tips: TipRecord[] = (rawMembers as unknown[])
       .map(parseTipRecord)
-      .filter((t): t is TipRecord => {
-        return (
-          t !== null &&
-          typeof t.from === "string" &&
-          typeof t.to === "string" &&
-          typeof t.amountUsdc === "number" &&
-          typeof t.txHash === "string" &&
-          typeof t.timestamp === "number"
-        );
-      });
+      .filter((t): t is TipRecord => t !== null);
 
     const addresses = Array.from(
       new Set(
@@ -100,25 +123,34 @@ export async function GET(req: Request) {
         });
 
         if (res.ok) {
-          const data = await res.json();
+          const data = (await res.json()) as Record<string, unknown>;
 
-          for (const [key, users] of Object.entries(data ?? {})) {
-            const match = Array.isArray(users) ? users[0] : null;
+          for (const [key, users] of Object.entries(data)) {
+            if (!Array.isArray(users) || users.length === 0) continue;
 
-            if (!match || typeof match !== "object") continue;
+            const user = users[0];
 
-            const user = match as {
+            if (!user || typeof user !== "object") continue;
+
+            const profile = user as {
+              fid?: number;
               username?: string;
               display_name?: string;
               pfp_url?: string;
             };
 
-            if (!user.username) continue;
+            if (
+              typeof profile.fid !== "number" ||
+              !profile.username
+            ) {
+              continue;
+            }
 
             identities.set(key.toLowerCase(), {
-              username: user.username,
-              displayName: user.display_name ?? user.username,
-              pfpUrl: user.pfp_url ?? "",
+              fid: profile.fid,
+              username: profile.username,
+              displayName: profile.display_name ?? profile.username,
+              pfpUrl: profile.pfp_url ?? "",
             });
           }
         } else {
@@ -128,24 +160,39 @@ export async function GET(req: Request) {
           );
         }
       } catch (err) {
-        console.warn("Tip history identity lookup error:", err);
+        console.warn(
+          "Tip history identity lookup error:",
+          err
+        );
       }
     }
 
-    const withIdentity = tips.map((t) => ({
-      txHash: t.txHash,
-      amountUsdc: t.amountUsdc,
-      tokenSymbol: t.tokenSymbol,
-      timestamp: t.timestamp,
-      from: {
-        address: t.from,
-        ...(identities.get(t.from.toLowerCase()) ?? {}),
-      },
-      to: {
-        address: t.to,
-        ...(identities.get(t.to.toLowerCase()) ?? {}),
-      },
-    }));
+    const withIdentity = tips.map((t) => {
+      const fromIdentity = identities.get(
+        t.from.toLowerCase()
+      );
+
+      const toIdentity = identities.get(
+        t.to.toLowerCase()
+      );
+
+      return {
+        txHash: t.txHash,
+        amountUsdc: t.amountUsdc,
+        tokenSymbol: t.tokenSymbol,
+        timestamp: t.timestamp,
+
+        from: {
+          address: t.from,
+          ...(fromIdentity ?? {}),
+        },
+
+        to: {
+          address: t.to,
+          ...(toIdentity ?? {}),
+        },
+      };
+    });
 
     return Response.json({
       success: true,
