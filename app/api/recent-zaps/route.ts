@@ -16,6 +16,7 @@ const client = createPublicClient({
 });
 
 const LOOKBACK_BLOCKS = BigInt(5_000);
+const MAX_LOG_BLOCK_RANGE = BigInt(9_000);
 const MAX_ZAPS = 12;
 
 const TRANSFER_EVENT = parseAbiItem(
@@ -36,13 +37,29 @@ export async function GET() {
     const fromBlock =
       latest > LOOKBACK_BLOCKS ? latest - LOOKBACK_BLOCKS : BigInt(0);
 
-    const feeLogs = await client.getLogs({
-      address: USDC_ADDRESS,
-      event: TRANSFER_EVENT,
-      args: { to: PLATFORM_FEE_WALLET },
-      fromBlock,
-      toBlock: latest,
-    });
+    // Query in safe chunks so the endpoint works with RPC providers that cap
+    // eth_getLogs block ranges.
+    const feeLogs = [];
+    for (
+      let chunkFrom = fromBlock;
+      chunkFrom <= latest;
+      chunkFrom += MAX_LOG_BLOCK_RANGE + BigInt(1)
+    ) {
+      const chunkTo =
+        chunkFrom + MAX_LOG_BLOCK_RANGE > latest
+          ? latest
+          : chunkFrom + MAX_LOG_BLOCK_RANGE;
+
+      const chunkLogs = await client.getLogs({
+        address: USDC_ADDRESS,
+        event: TRANSFER_EVENT,
+        args: { to: PLATFORM_FEE_WALLET },
+        fromBlock: chunkFrom,
+        toBlock: chunkTo,
+      });
+
+      feeLogs.push(...chunkLogs);
+    }
 
     // Newest first, capped — this is a feed, not a full history.
     const recentFeeLogs = [...feeLogs].reverse().slice(0, MAX_ZAPS);
