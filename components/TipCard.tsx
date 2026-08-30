@@ -15,6 +15,8 @@ import {
   TIP_PRESETS,
   TIPPABLE_TOKENS,
   USDC_DECIMALS,
+  ZAP_ADDRESS,
+  ZAP_HOLDER_THRESHOLD,
   type TippableTokenSymbol,
 } from "@/lib/constants";
 import { formatUsdc, splitTipAmount } from "@/lib/utils";
@@ -76,6 +78,24 @@ export function TipCard({
   });
   const decimals = token.decimals ?? fetchedDecimals ?? 18;
 
+  // Check $ZAP balance — holders with >= ZAP_HOLDER_THRESHOLD pay 0% fee.
+  const { data: zapBalance } = useReadContract({
+    address: ZAP_ADDRESS,
+    abi: ERC20_ABI,
+    functionName: "balanceOf",
+    args: [address ?? "0x0000000000000000000000000000000000000000"],
+    query: { enabled: !!address },
+  });
+
+  const isZapHolder = useMemo(() => {
+    if (!zapBalance) return false;
+    // $ZAP uses 18 decimals (standard ERC-20)
+    const threshold = BigInt(ZAP_HOLDER_THRESHOLD) * BigInt(10) ** BigInt(18);
+    return zapBalance >= threshold;
+  }, [zapBalance]);
+
+  const effectiveFeeBps = isZapHolder ? 0 : PLATFORM_FEE_BPS;
+
   const [selected, setSelected] = useState<number>(TIP_PRESETS[2]);
   const [custom, setCustom] = useState("");
   const [isCustom, setIsCustom] = useState(false);
@@ -105,8 +125,8 @@ export function TipCard({
   }, [isCustom, custom, selected]);
 
   const { fee, recipientAmount } = useMemo(
-    () => splitTipAmount(amount || 0, decimals),
-    [amount, decimals]
+    () => splitTipAmount(amount || 0, decimals, effectiveFeeBps),
+    [amount, decimals, effectiveFeeBps]
   );
 
   // Records the tip for the public history feed once the real onchain tx
@@ -194,21 +214,25 @@ export function TipCard({
             args: [recipient, recipientAmount],
           }),
         },
-        {
-          capabilities: paymasterSupported
-            ? {
-                paymasterService: {
-                  url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
-                },
-              }
-            : {},
-          to: token.address,
-          data: encodeFunctionData({
-            abi: ERC20_ABI,
-            functionName: "transfer",
-            args: [PLATFORM_FEE_WALLET, fee],
-          }),
-        },
+        ...(fee > BigInt(0)
+          ? [
+              {
+                capabilities: paymasterSupported
+                  ? {
+                      paymasterService: {
+                        url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
+                      },
+                    }
+                  : {},
+                to: token.address,
+                data: encodeFunctionData({
+                  abi: ERC20_ABI,
+                  functionName: "transfer",
+                  args: [PLATFORM_FEE_WALLET, fee],
+                }),
+              },
+            ]
+          : []),
       ];
 
       sendCalls(
@@ -356,7 +380,9 @@ export function TipCard({
           </span>
         </div>
         <div className="flex justify-between text-white/40">
-          <span>Platform fee ({PLATFORM_FEE_BPS / 100}%)</span>
+          <span>
+            Platform fee{isZapHolder ? " (0% — $ZAP holder)" : ` (${PLATFORM_FEE_BPS / 100}%)`}
+          </span>
           <span>
             {formatUsdc(amount ? Number(formatUnits(fee, decimals)) : 0)}{" "}
             {tokenSymbol}
@@ -371,11 +397,12 @@ export function TipCard({
       </div>
 
       <p className="mt-3 text-center text-[11px] leading-relaxed text-white/35">
-        {tokenSymbol === "DIEM"
-          ? "DIEM is an optional Venice ecosystem token. A "
-          : "A "}
-        {PLATFORM_FEE_BPS / 100}% platform fee supports development —
-        shown above, nothing hidden.
+        {isZapHolder
+          ? "$ZAP holder benefit — 0% platform fee. "
+          : (tokenSymbol === "DIEM"
+              ? "DIEM is an optional Venice ecosystem token. A "
+              : "A ") + `${PLATFORM_FEE_BPS / 100}% platform fee supports development — shown above, nothing hidden. `}
+        {!isZapHolder && "Hold 100+ $ZAP for 0% fee."}
       </p>
 
       <button

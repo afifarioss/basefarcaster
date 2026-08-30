@@ -161,7 +161,7 @@ export function Hero({
                 </p>
 
                 <p className="mt-3 text-[11px] text-white/30">
-                  Explore $ZAP as the ecosystem grows. Future utility will be announced as it goes live.
+                  Hold 100+ $ZAP to pay 0% platform fee on every tip. The more you tip, the more you save.
                 </p>
               </div>
             </div>

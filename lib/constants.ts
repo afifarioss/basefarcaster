@@ -247,3 +247,16 @@ export const VVV_STAKING_ADDRESS: `0x${string}` =
  * VVV required for Venice Pro.
  */
 export const VVV_PRO_STAKE_THRESHOLD = 100;
+
+/**
+ * $ZAP ecosystem token on Base Mainnet.
+ *
+ * Holding >= ZAP_HOLDER_THRESHOLD grants 0% platform fee on tips.
+ */
+export const ZAP_ADDRESS: `0x${string}` =
+  "0x8C1ca2c32CD197a27CA049aA0427f64192aD3ba3";
+
+/**
+ * Minimum $ZAP balance to qualify for the 0% fee benefit.
+ */
+export const ZAP_HOLDER_THRESHOLD = 100;

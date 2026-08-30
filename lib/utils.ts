@@ -8,10 +8,16 @@ import { PLATFORM_FEE_BPS, FEE_DENOMINATOR, USDC_DECIMALS } from "./constants";
  * tipping currency; pass a token's own decimals for others (e.g. VVV).
  * Fee is rounded down; recipient receives the remainder, so the two legs
  * always sum exactly back to the original transfer amount.
+ *
+ * Pass feeBps = 0 for $ZAP holders who get 0% platform fee.
  */
-export function splitTipAmount(amount: number, decimals: number = USDC_DECIMALS) {
+export function splitTipAmount(
+  amount: number,
+  decimals: number = USDC_DECIMALS,
+  feeBps: number = PLATFORM_FEE_BPS
+) {
   const total = parseUnits(amount.toFixed(decimals), decimals);
-  const fee = (total * BigInt(PLATFORM_FEE_BPS)) / BigInt(FEE_DENOMINATOR);
+  const fee = (total * BigInt(feeBps)) / BigInt(FEE_DENOMINATOR);
   const recipientAmount = total - fee;
   return { total, fee, recipientAmount };
 }
