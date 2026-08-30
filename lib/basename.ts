@@ -3,7 +3,7 @@ import { base } from "viem/chains";
 
 const client = createPublicClient({
   chain: base,
-  transport: http(),
+  transport: http(process.env.BASE_RPC_URL || undefined),
 });
 
 const BASENAME_RESOLVER =

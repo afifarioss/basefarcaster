@@ -24,7 +24,7 @@ export const revalidate = 30;
 
 const client = createPublicClient({
   chain: base,
-  transport: http(),
+  transport: http(process.env.BASE_RPC_URL || undefined),
 });
 
 // Base produces a block roughly every 2 seconds, so ~43,200 blocks ≈ 24h.

@@ -22,7 +22,7 @@ const redis = new Redis({
 
 const client = createPublicClient({
   chain: base,
-  transport: http(),
+  transport: http(process.env.BASE_RPC_URL || undefined),
 });
 
 const MAX_REASONABLE_USDC = 1_000_000;
