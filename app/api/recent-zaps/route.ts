@@ -1,135 +1,77 @@
-import { createPublicClient, http, parseAbiItem, formatUnits, decodeEventLog } from "viem";
-import { base } from "viem/chains";
-import {
-  USDC_ADDRESS,
-  USDC_DECIMALS,
-  PLATFORM_FEE_WALLET,
-  PLATFORM_FEE_BPS,
-  FEE_DENOMINATOR,
-} from "../../../lib/constants";
+export const dynamic = "force-dynamic";
+
+import { Redis } from "@upstash/redis";
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL as string,
+  token: process.env.KV_REST_API_TOKEN as string,
+});
 
 export const revalidate = 30;
 
-const client = createPublicClient({
-  chain: base,
-  transport: http(process.env.BASE_RPC_URL || undefined),
-});
-
-const LOOKBACK_BLOCKS = BigInt(5_000);
-const MAX_LOG_BLOCK_RANGE = BigInt(9_000);
 const MAX_ZAPS = 12;
 
-const TRANSFER_EVENT = parseAbiItem(
-  "event Transfer(address indexed from, address indexed to, uint256 value)"
-);
-
-type RawZap = {
-  from: `0x${string}`;
-  to: `0x${string}`;
+type TipRecord = {
+  from: string;
+  to: string;
   amountUsdc: number;
-  txHash: `0x${string}`;
-  blockNumber: bigint;
+  txHash: string;
+  tokenSymbol: string;
+  timestamp: number;
 };
+
+function parseTipRecord(value: unknown): TipRecord | null {
+  let parsed: unknown = value;
+
+  if (typeof value === "string") {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!parsed || typeof parsed !== "object") return null;
+
+  const record = parsed as Record<string, unknown>;
+
+  const from = typeof record.from === "string" ? record.from : "";
+  const to = typeof record.to === "string" ? record.to : "";
+  const txHash = typeof record.txHash === "string" ? record.txHash : "";
+
+  const amountUsdc = Number(record.amountUsdc);
+  const timestamp = Number(record.timestamp);
+
+  const tokenSymbol =
+    typeof record.tokenSymbol === "string" && record.tokenSymbol
+      ? record.tokenSymbol
+      : "USDC";
+
+  if (
+    !from ||
+    !to ||
+    !txHash ||
+    !Number.isFinite(amountUsdc) ||
+    !Number.isFinite(timestamp)
+  ) {
+    return null;
+  }
+
+  return { from, to, amountUsdc, txHash, tokenSymbol, timestamp };
+}
 
 export async function GET() {
   try {
-    const latest = await client.getBlockNumber();
-    const fromBlock =
-      latest > LOOKBACK_BLOCKS ? latest - LOOKBACK_BLOCKS : BigInt(0);
+    const rawMembers = await redis.zrange("tips:history", 0, MAX_ZAPS - 1, {
+      rev: true,
+    });
 
-    // Query in safe chunks so the endpoint works with RPC providers that cap
-    // eth_getLogs block ranges.
-    const feeLogs = [];
-    for (
-      let chunkFrom = fromBlock;
-      chunkFrom <= latest;
-      chunkFrom += MAX_LOG_BLOCK_RANGE + BigInt(1)
-    ) {
-      const chunkTo =
-        chunkFrom + MAX_LOG_BLOCK_RANGE > latest
-          ? latest
-          : chunkFrom + MAX_LOG_BLOCK_RANGE;
+    const tips: TipRecord[] = (rawMembers as unknown[])
+      .map(parseTipRecord)
+      .filter((t): t is TipRecord => t !== null);
 
-      const chunkLogs = await client.getLogs({
-        address: USDC_ADDRESS,
-        event: TRANSFER_EVENT,
-        args: { to: PLATFORM_FEE_WALLET },
-        fromBlock: chunkFrom,
-        toBlock: chunkTo,
-      });
-
-      feeLogs.push(...chunkLogs);
-    }
-
-    // Newest first, capped — this is a feed, not a full history.
-    const recentFeeLogs = [...feeLogs].reverse().slice(0, MAX_ZAPS);
-
-    const rawZaps: RawZap[] = [];
-
-    for (const feeLog of recentFeeLogs) {
-      const tipper = feeLog.args.from;
-      const feeAmount = feeLog.args.value ?? BigInt(0);
-      if (!tipper || !feeLog.transactionHash) continue;
-
-      // Find the sibling recipient-leg transfer batched in the same tx.
-      const receipt = await client.getTransactionReceipt({
-        hash: feeLog.transactionHash,
-      });
-
-      let recipientLeg: { to: `0x${string}`; value: bigint } | null = null;
-
-      for (const rl of receipt.logs) {
-        if (rl.address.toLowerCase() !== USDC_ADDRESS.toLowerCase()) continue;
-        try {
-          const decoded = decodeEventLog({
-            abi: [TRANSFER_EVENT],
-            data: rl.data,
-            topics: rl.topics,
-          });
-          const dFrom = decoded.args.from as `0x${string}` | undefined;
-          const dTo = decoded.args.to as `0x${string}` | undefined;
-          if (
-            dFrom?.toLowerCase() === tipper.toLowerCase() &&
-            dTo?.toLowerCase() !== PLATFORM_FEE_WALLET.toLowerCase()
-          ) {
-            recipientLeg = { to: dTo as `0x${string}`, value: decoded.args.value as bigint };
-            break;
-          }
-        } catch {
-          continue;
-        }
-      }
-
-      // No sibling leg found (e.g. wallet didn't batch) — skip rather than
-      // show a half-correlated or fake-looking entry.
-      if (!recipientLeg) continue;
-
-      const totalVolumeUnits =
-        (feeAmount * BigInt(FEE_DENOMINATOR)) / BigInt(PLATFORM_FEE_BPS);
-
-      rawZaps.push({
-        from: tipper,
-        to: recipientLeg.to,
-        amountUsdc: Number(formatUnits(totalVolumeUnits, USDC_DECIMALS)),
-        txHash: feeLog.transactionHash,
-        blockNumber: feeLog.blockNumber ?? BigInt(0),
-      });
-    }
-
-    // Resolve block timestamps, deduped by block number.
-    const blockTimestamps = new Map<string, number>();
-    for (const z of rawZaps) {
-      const key = z.blockNumber.toString();
-      if (!blockTimestamps.has(key)) {
-        const block = await client.getBlock({ blockNumber: z.blockNumber });
-        blockTimestamps.set(key, Number(block.timestamp));
-      }
-    }
-
-    // Batch-resolve Farcaster identities for every address involved —
-    // one Neynar call for the whole feed, not one per address.
     const addresses = Array.from(
-      new Set(rawZaps.flatMap((z) => [z.from.toLowerCase(), z.to.toLowerCase()]))
+      new Set(tips.flatMap((t) => [t.from.toLowerCase(), t.to.toLowerCase()]))
     );
 
     const identities = new Map<
@@ -141,23 +83,21 @@ export async function GET() {
 
     if (apiKey && addresses.length > 0) {
       try {
-        const res = await fetch(
-          `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${addresses.join(
-            ","
-          )}`,
-          {
-            headers: {
-              accept: "application/json",
-              "x-api-key": apiKey,
-            },
-            next: { revalidate: 60 },
-          }
+        const url = new URL(
+          "https://api.neynar.com/v2/farcaster/user/bulk-by-address"
         );
+        url.searchParams.set("addresses", addresses.join(","));
+
+        const res = await fetch(url, {
+          headers: { accept: "application/json", "x-api-key": apiKey },
+          next: { revalidate: 60 },
+        });
 
         if (res.ok) {
-          const data = await res.json();
+          const data = (await res.json()) as Record<string, unknown>;
           for (const addr of addresses) {
-            const match = data?.[addr]?.[0];
+            const users = data?.[addr];
+            const match = Array.isArray(users) ? users[0] : undefined;
             if (match) {
               identities.set(addr, {
                 username: match.username,
@@ -168,21 +108,20 @@ export async function GET() {
           }
         }
       } catch {
-        // Identity resolution is best-effort — falls back to raw address below.
       }
     }
 
-    const zaps = rawZaps.map((z) => ({
-      txHash: z.txHash,
-      amountUsdc: z.amountUsdc,
-      timestamp: blockTimestamps.get(z.blockNumber.toString()) ?? null,
+    const zaps = tips.map((t) => ({
+      txHash: t.txHash,
+      amountUsdc: t.amountUsdc,
+      timestamp: Math.floor(t.timestamp / 1000),
       from: {
-        address: z.from,
-        ...(identities.get(z.from.toLowerCase()) ?? {}),
+        address: t.from,
+        ...(identities.get(t.from.toLowerCase()) ?? {}),
       },
       to: {
-        address: z.to,
-        ...(identities.get(z.to.toLowerCase()) ?? {}),
+        address: t.to,
+        ...(identities.get(t.to.toLowerCase()) ?? {}),
       },
     }));
 
