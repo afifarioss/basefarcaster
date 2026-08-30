@@ -1,22 +1,9 @@
 {
-  "name": "@basefarcaster/mcp-server",
-  "version": "1.0.0",
-  "description": "MCP server exposing BaseFarCaster's USDC tip-quoting and transaction-building tools to AI agents. Read-only and calldata-construction only — never holds keys or moves funds itself.",
+  "name": "basefarcaster-mcp-server",
+  "private": true,
   "type": "module",
-  "bin": {
-    "basefarcaster-mcp": "./src/index.js"
-  },
-  "main": "./src/index.js",
-  "scripts": {
-    "start": "node src/index.js"
-  },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
-    "viem": "^2.21.44",
-    "zod": "^3.23.8"
-  },
-  "engines": {
-    "node": ">=18"
-  },
-  "license": "MIT"
+    "@modelcontextprotocol/server": "2.0.0",
+    "zod": "4.2.0"
+  }
 }
