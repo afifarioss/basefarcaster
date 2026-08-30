@@ -231,20 +231,6 @@ export function TipCard({
                   // Notification is best-effort — never surface this to the tipper.
                 });
               }
-              if (tokenSymbol === "USDC" && address) {
-                fetch("/api/record-tip", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    from: address,
-                    to: recipient,
-                    amountUsdc: amount,
-                    callsId: data.id,
-                  }),
-                }).catch(() => {
-                  // Leaderboard recording is best-effort — never surface this to the tipper.
-                });
-              }
           },
           onError: (err) => {
             setErrorMsg(err.message.split("\n")[0].slice(0, 140));

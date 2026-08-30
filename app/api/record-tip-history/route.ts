@@ -151,10 +151,12 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, duplicate: true });
     }
 
+    const fromKey = from.toLowerCase();
+    const toKey = to.toLowerCase();
     const timestamp = Date.now();
     const record = JSON.stringify({
-      from: from.toLowerCase(),
-      to: to.toLowerCase(),
+      from: fromKey,
+      to: toKey,
       amountUsdc,
       txHash,
       tokenSymbol: tokenSymbol ?? "USDC",
@@ -163,7 +165,21 @@ export async function POST(req: Request) {
 
     // Sorted set, scored by timestamp — newest-first pagination via zrange rev.
     // txHash inside the JSON member keeps every entry unique.
-    await redis.zadd("tips:history", { score: timestamp, member: record });
+    //
+    // Leaderboard credit (USDC only, matching current scope) happens here
+    // because this is the only point with an onchain-verified amount —
+    // /api/record-tip fired before a real tx hash existed and is now
+    // deprecated to prevent double-crediting.
+    const writes: Promise<unknown>[] = [
+      redis.zadd("tips:history", { score: timestamp, member: record }),
+    ];
+    if (selectedToken === "USDC") {
+      writes.push(
+        redis.zincrby("leaderboard:senders", amountUsdc, fromKey),
+        redis.zincrby("leaderboard:recipients", amountUsdc, toKey)
+      );
+    }
+    await Promise.all(writes);
 
     return Response.json({ ok: true });
   } catch (err) {
