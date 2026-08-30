@@ -47,6 +47,19 @@ export function TipCard({
   });
   const resolvedTxHash = callsStatus?.receipts?.[0]?.transactionHash;
 
+  // EIP-5792 sendCalls success only confirms that the wallet accepted the
+  // bundle. Show the success modal only after the bundle reaches success
+  // and a real onchain transaction hash is available.
+  useEffect(() => {
+    if (
+      status === "sending" &&
+      callsStatus?.status === "success" &&
+      resolvedTxHash
+    ) {
+      setStatus("success");
+    }
+  }, [callsStatus?.status, resolvedTxHash, status]);
+
 
   // Detect whether the connected wallet actually supports gas sponsorship
   // (EIP-5792 paymasterService) before requesting it. Wallets that don't
@@ -215,7 +228,7 @@ export function TipCard({
         {
           onSuccess: (data) => {
             setCallsId(data.id);
-            setStatus("success");
+            setStatus("sending");
               if (recipientFid) {
                 fetch("/api/notify-tip", {
                   method: "POST",
