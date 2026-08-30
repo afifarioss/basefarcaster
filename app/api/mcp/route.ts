@@ -1,5 +1,6 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
+import { Redis } from "@upstash/redis";
 import {
   USDC_ADDRESS,
   USDC_DECIMALS,
@@ -10,6 +11,7 @@ import {
 } from "@/lib/constants";
 import { splitTipAmount } from "@/lib/utils";
 import { encodeFunctionData } from "viem";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 async function initializeServer(server: Parameters<typeof createMcpHandler>[0] extends (server: infer S) => unknown ? S : never) {
   server.registerTool(
@@ -127,11 +129,38 @@ async function initializeServer(server: Parameters<typeof createMcpHandler>[0] e
   );
 }
 
-const handler = createMcpHandler(initializeServer, {
+const mcpHandler = createMcpHandler(initializeServer, {
   serverInfo: {
     name: "basefarcaster",
     version: "1.0.0",
   },
 });
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL as string,
+  token: process.env.KV_REST_API_TOKEN as string,
+});
+
+const MCP_RATE_LIMIT = 30;
+const MCP_RATE_WINDOW_SECONDS = 60;
+
+async function handler(request: Request) {
+  const ip = getClientIp(request);
+  const { allowed, resetSeconds } = await checkRateLimit(
+    redis,
+    `mcp:${ip}`,
+    MCP_RATE_LIMIT,
+    MCP_RATE_WINDOW_SECONDS
+  );
+
+  if (!allowed) {
+    return Response.json(
+      { error: "Too many requests, please slow down." },
+      { status: 429, headers: { "Retry-After": String(resetSeconds) } }
+    );
+  }
+
+  return mcpHandler(request);
+}
 
 export { handler as GET, handler as POST };
