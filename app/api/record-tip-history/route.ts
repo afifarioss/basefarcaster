@@ -5,7 +5,6 @@ import {
   http,
   decodeEventLog,
   parseAbiItem,
-
 } from "viem";
 import { base } from "viem/chains";
 import {
@@ -14,14 +13,12 @@ import {
   USDC_ADDRESS,
   USDC_DECIMALS,
   PLATFORM_FEE_BPS,
-  FEE_DENOMINATOR,
+  PLATFORM_FEE_WALLET,
   ZAP_TOKEN_ADDRESS,
   ZAP_HOLDER_THRESHOLD,
   ERC20_ABI,
 } from "@/lib/constants";
 import { splitTipAmount } from "@/lib/utils";
-
-export const dynamic = "force-dynamic";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL as string,
@@ -40,44 +37,9 @@ const TRANSFER_EVENT = parseAbiItem(
   "event Transfer(address indexed from, address indexed to, uint256 value)"
 );
 
-/**
- * Server-side verification that the sender actually qualifies for the
- * 0% $ZAP holder fee. Reads the sender's $ZAP token balance from the
- * block the tip tx was mined in (using the tx receipt's blockNumber),
- * so the check reflects the onchain state at the time of tipping.
- *
- * Returns true if the sender holds >= ZAP_HOLDER_THRESHOLD $ZAP.
- * Returns false otherwise — the server will then require the 2% fee
- * transfer to be present in the tx logs.
- */
-async function verifyZapHolderStatus(
-  sender: `0x${string}`,
-  blockNumber: bigint
-): Promise<boolean> {
-  try {
-    const balance = await client.readContract({
-      address: ZAP_TOKEN_ADDRESS,
-      abi: ERC20_ABI,
-      functionName: "balanceOf",
-      args: [sender],
-      blockNumber,
-    });
-    const threshold =
-      BigInt(ZAP_HOLDER_THRESHOLD) * BigInt(10) ** BigInt(18);
-    return (balance as bigint) >= threshold;
-  } catch (err) {
-    console.warn(
-      "record-tip-history: $ZAP balance check failed, defaulting to 2% fee verification",
-      err
-    );
-    return false;
-  }
-}
-
 export async function POST(req: Request) {
   try {
-    const { from, to, amountUsdc, txHash, tokenSymbol, feeBps } =
-      await req.json();
+    const { from, to, amountUsdc, txHash, tokenSymbol, feeBps } = await req.json();
 
     if (
       typeof from !== "string" ||
@@ -96,6 +58,8 @@ export async function POST(req: Request) {
 
     const selectedToken = tokenSymbol ?? "USDC";
 
+    // History verification supports USDC and optional DIEM.
+    // VVV remains outside this verification path for now.
     const tokenConfig =
       selectedToken === "USDC"
         ? { address: USDC_ADDRESS, decimals: USDC_DECIMALS }
@@ -137,92 +101,115 @@ export async function POST(req: Request) {
       );
     }
 
-    // Server-side $ZAP eligibility check.
-    // The client claims feeBps=0, but we don't trust it — we verify
-    // the sender's actual $ZAP balance at the tx block. If they don't
-    // hold 100+ $ZAP, we fall back to requiring the full 2% fee.
-    const clientClaimsZeroFee =
-      typeof feeBps === "number" && feeBps === 0;
+    // Determine the fee mode on the server. Never trust feeBps from the client.
+    // The sender must have held the required $ZAP balance at the tip's block
+    // to qualify for the 0% platform fee.
+    let isZapHolder = false;
+    try {
+      const zapBalance = await client.readContract({
+        address: ZAP_TOKEN_ADDRESS,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [from as `0x${string}`],
+        blockNumber: receipt.blockNumber,
+      });
 
-    let effectiveFeeBps: number;
+      const zapThreshold =
+        BigInt(ZAP_HOLDER_THRESHOLD) * BigInt(10) ** BigInt(18);
 
-    if (clientClaimsZeroFee) {
-      const isVerifiedZapHolder = await verifyZapHolderStatus(
-        from as `0x${string}`,
-        receipt.blockNumber
+      isZapHolder = zapBalance >= zapThreshold;
+    } catch (err) {
+      console.warn(
+        "record-tip-history: unable to verify $ZAP holder status",
+        from,
+        err
       );
-      effectiveFeeBps = isVerifiedZapHolder ? 0 : PLATFORM_FEE_BPS;
-    } else {
-      effectiveFeeBps =
-        typeof feeBps === "number" && feeBps >= 0 && feeBps <= PLATFORM_FEE_BPS
-          ? feeBps
-          : PLATFORM_FEE_BPS;
     }
 
-    // Compute expected amounts using the effective fee rate.
-    // For $ZAP holders (feeBps=0): recipientAmount = total, fee = 0
-    // For normal users (feeBps=200): recipientAmount = total - 2%, fee = 2%
-    const { recipientAmount, fee } = splitTipAmount(
+    const serverFeeBps = isZapHolder ? 0 : PLATFORM_FEE_BPS;
+
+    // If the client supplied a fee mode, require it to agree with the
+    // server-derived mode. This catches stale or manipulated client state.
+    if (feeBps !== undefined && feeBps !== serverFeeBps) {
+      return Response.json(
+        {
+          ok: false,
+          error: "fee mode does not match sender eligibility",
+          expectedFeeBps: serverFeeBps,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Use the selected token's decimals for exact onchain verification.
+    const { fee, recipientAmount } = splitTipAmount(
       amountUsdc,
       tokenConfig.decimals,
-      effectiveFeeBps
+      serverFeeBps
     );
 
-    // Match the creator transfer — this is the primary tip identification.
-    // Both 2% and 0% tips must have this transfer to the recipient.
-    let recipientMatched = false;
-    let feeMatched = effectiveFeeBps === 0; // 0% tips don't need fee match
+    let creatorMatched = false;
+    let feeMatched = fee === BigInt(0);
+    const expectedFeeWallet = PLATFORM_FEE_WALLET.toLowerCase();
 
     for (const log of receipt.logs) {
       if (
         log.address.toLowerCase() !== tokenConfig.address.toLowerCase()
-      )
+      ) {
         continue;
+      }
+
       try {
         const decoded = decodeEventLog({
           abi: [TRANSFER_EVENT],
           data: log.data,
           topics: log.topics,
         });
+
         const dFrom = decoded.args.from as `0x${string}`;
         const dTo = decoded.args.to as `0x${string}`;
         const dValue = decoded.args.value as bigint;
 
+        if (dFrom.toLowerCase() !== from.toLowerCase()) {
+          continue;
+        }
+
         if (
-          dFrom.toLowerCase() === from.toLowerCase() &&
           dTo.toLowerCase() === to.toLowerCase() &&
           dValue === recipientAmount
         ) {
-          recipientMatched = true;
+          creatorMatched = true;
         }
 
-        // For 2% tips, also verify the fee transfer exists
         if (
-          effectiveFeeBps > 0 &&
           fee > BigInt(0) &&
-          dFrom.toLowerCase() === from.toLowerCase() &&
-          dTo.toLowerCase() ===
-            (process.env.NEXT_PUBLIC_FEE_WALLET ?? "").toLowerCase() &&
+          dTo.toLowerCase() === expectedFeeWallet &&
           dValue === fee
         ) {
           feeMatched = true;
+        }
+
+        if (creatorMatched && feeMatched) {
+          break;
         }
       } catch {
         continue;
       }
     }
 
-    if (!recipientMatched || !feeMatched) {
+    if (!creatorMatched || !feeMatched) {
       return Response.json(
         {
           ok: false,
-          error: `tip verification failed: recipient=${recipientMatched}, fee=${feeMatched}`,
+          error: `transaction does not contain the complete ${selectedToken} tip split`,
+          creatorTransferVerified: creatorMatched,
+          feeTransferVerified: feeMatched,
         },
         { status: 400 }
       );
     }
 
-    // Idempotency — only after full verification
+    // Idempotency is recorded only after the transaction has been fully verified.
     const isNewTx = await redis.set(`tiphistory:seen:${txHash}`, "1", {
       nx: true,
       ex: 86400,
@@ -243,9 +230,15 @@ export async function POST(req: Request) {
       txHash,
       tokenSymbol: tokenSymbol ?? "USDC",
       timestamp,
-      feeBps: effectiveFeeBps,
     });
 
+    // Sorted set, scored by timestamp — newest-first pagination via zrange rev.
+    // txHash inside the JSON member keeps every entry unique.
+    //
+    // Leaderboard credit (USDC only, matching current scope) happens here
+    // because this is the only point with an onchain-verified amount —
+    // /api/record-tip fired before a real tx hash existed and is now
+    // deprecated to prevent double-crediting.
     const writes: Promise<unknown>[] = [
       redis.zadd("tips:history", { score: timestamp, member: record }),
     ];
@@ -260,6 +253,7 @@ export async function POST(req: Request) {
     return Response.json({ ok: true });
   } catch (err) {
     console.error("record-tip-history error:", err);
+    // Best-effort — never block or surface this to the tipper.
     return Response.json({ ok: false }, { status: 200 });
   }
 }
