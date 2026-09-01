@@ -8,7 +8,9 @@ const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN as string,
 });
 
-const RATE_LIMIT = 20;
+// Tighter than the old 20/60s — this endpoint hits Neynar on cache miss,
+// so 10 requests per 60s per IP is sufficient for legitimate typing/search.
+const RATE_LIMIT = 10;
 const RATE_WINDOW_SECONDS = 60;
 
 export async function GET(req: NextRequest) {
@@ -30,6 +32,7 @@ export async function GET(req: NextRequest) {
   const result = await resolveFarcasterUser({
     username: req.nextUrl.searchParams.get("username"),
     fid: req.nextUrl.searchParams.get("fid"),
+    redis,
   });
 
   if ("error" in result) {

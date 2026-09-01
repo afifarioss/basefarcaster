@@ -7,6 +7,16 @@ import {
   PLATFORM_FEE_BPS,
   FEE_DENOMINATOR,
 } from "../../../lib/constants";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { Redis } from "@upstash/redis";
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL as string,
+  token: process.env.KV_REST_API_TOKEN as string,
+});
+
+const RATE_LIMIT = 10;
+const RATE_WINDOW_SECONDS = 60;
 
 /**
  * Real social-proof data derived from Base onchain logs.
@@ -31,7 +41,21 @@ const client = createPublicClient({
 const LOOKBACK_BLOCKS = BigInt(43_200);
 const WINDOW_HOURS = 24;
 
-export async function GET() {
+export async function GET(req: Request) {
+  const ip = getClientIp(req);
+  const { allowed, resetSeconds } = await checkRateLimit(
+    redis,
+    `stats:${ip}`,
+    RATE_LIMIT,
+    RATE_WINDOW_SECONDS
+  );
+  if (!allowed) {
+    return Response.json(
+      { error: "Too many requests, please slow down." },
+      { status: 429, headers: { "Retry-After": String(resetSeconds) } }
+    );
+  }
+
   try {
     const latest = await client.getBlockNumber();
 

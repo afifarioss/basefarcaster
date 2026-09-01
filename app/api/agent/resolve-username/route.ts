@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "x402-next";
 import { facilitator } from "@coinbase/x402";
+import { Redis } from "@upstash/redis";
 import { resolveFarcasterUser } from "@/lib/resolve-farcaster-user";
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL as string,
+  token: process.env.KV_REST_API_TOKEN as string,
+});
 
 /**
  * x402-gated version of /api/resolve-user, for external agents
@@ -25,6 +31,7 @@ async function handler(req: NextRequest): Promise<NextResponse<any>> {
   const result = await resolveFarcasterUser({
     username: req.nextUrl.searchParams.get("username"),
     fid: req.nextUrl.searchParams.get("fid"),
+    redis,
   });
 
   if ("error" in result) {

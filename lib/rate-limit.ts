@@ -21,7 +21,19 @@ export async function checkRateLimit(
   };
 }
 
+/**
+ * Returns the best available client IP.
+ *
+ * On Vercel, x-vercel-forwarded-for is the platform-managed header
+ * and cannot be spoofed by the client. Fall back to x-forwarded-for
+ * and x-real-ip only for non-Vercel environments (local dev, etc).
+ * Never trust a client-set x-forwarded-for on Vercel without checking
+ * the Vercel header first — an attacker can inject both.
+ */
 export function getClientIp(req: Request): string {
+  const vercelFwd = req.headers.get("x-vercel-forwarded-for");
+  if (vercelFwd) return vercelFwd.split(",")[0].trim();
+
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0].trim();
 

@@ -2,9 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useConnect, useReadContract } from "wagmi";
-// EIP-5792 batched calls are still exposed from wagmi's experimental entry
-// point as of wagmi v2.13. Check the wagmi changelog when upgrading —
-// this may move to the root `wagmi` export in a future major version.
 import { useCallsStatus, useCapabilities, useSendCalls } from "wagmi/experimental";
 import { encodeFunctionData } from "viem";
 import {
@@ -15,28 +12,33 @@ import {
   TIP_PRESETS,
   TIPPABLE_TOKENS,
   USDC_DECIMALS,
+  ZAP_TOKEN_ADDRESS,
+  ZAP_HOLDER_THRESHOLD,
   type TippableTokenSymbol,
 } from "@/lib/constants";
-import { formatUsdc, splitTipAmount } from "@/lib/utils";
+import { formatUsdc, formatAddress, splitTipAmount } from "@/lib/utils";
 import { SuccessModal } from "./SuccessModal";
 
 export function TipCard({
   recipient,
   recipientLabel = "this creator",
   recipientFid,
+  recipientAddress,
+  recipientPfpUrl,
+  recipientUsername,
 }: {
   recipient: `0x${string}`;
   recipientLabel?: string;
   recipientFid?: number;
+  recipientAddress?: string;
+  recipientPfpUrl?: string;
+  recipientUsername?: string;
 }) {
   const { isConnected, address, chainId } = useAccount();
   const { connectors, connect } = useConnect();
   const { sendCalls, isPending } = useSendCalls();
   const [callsId, setCallsId] = useState<string | undefined>(undefined);
   const historyRecordedRef = useRef(false);
-  // Resolves the EIP-5792 bundle ID into a real onchain transaction hash —
-  // sendCalls only gives back a bundle id (data.id), not a tx hash, and
-  // that bundle id is NOT a valid Basescan link on its own.
   const { data: callsStatus } = useCallsStatus({
     id: callsId as string,
     query: {
@@ -47,27 +49,35 @@ export function TipCard({
   });
   const resolvedTxHash = callsStatus?.receipts?.[0]?.transactionHash;
 
-
-  // Detect whether the connected wallet actually supports gas sponsorship
-  // (EIP-5792 paymasterService) before requesting it. Wallets that don't
-  // support it should generally ignore an unsupported capability, but
-  // checking upfront lets us know the real sponsorship state rather than
-  // assuming it's always active.
   const { data: availableCapabilities } = useCapabilities({ account: address });
   const paymasterSupported = useMemo(() => {
     if (!availableCapabilities || !chainId) return false;
     return availableCapabilities[chainId]?.paymasterService?.supported === true;
   }, [availableCapabilities, chainId]);
 
+  // Check $ZAP token balance to determine fee eligibility
+  const { data: zapBalance } = useReadContract({
+    address: ZAP_TOKEN_ADDRESS,
+    abi: ERC20_ABI,
+    functionName: "balanceOf",
+    args: [address!],
+    query: { enabled: !!address },
+  });
+
+  const isZapHolder = useMemo(() => {
+    if (!zapBalance) return false;
+    // $ZAP uses 18 decimals (standard ERC20)
+    const threshold = BigInt(ZAP_HOLDER_THRESHOLD) * BigInt(10) ** BigInt(18);
+    return zapBalance >= threshold;
+  }, [zapBalance]);
+
+  const effectiveFeeBps = isZapHolder ? 0 : PLATFORM_FEE_BPS;
+
   const [tokenSymbol, setTokenSymbol] =
     useState<TippableTokenSymbol>("USDC");
 
-
   const token = TIPPABLE_TOKENS.find((t) => t.symbol === tokenSymbol)!;
 
-  // USDC's decimals are a known constant (6). VVV's are fetched live from
-  // its own contract rather than assumed, since we don't hardcode facts
-  // about a token we don't control.
   const { data: fetchedDecimals } = useReadContract({
     address: token.address,
     abi: ERC20_ABI,
@@ -85,9 +95,6 @@ export function TipCard({
   const [errorMsg, setErrorMsg] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // EIP-5792 sendCalls success only confirms that the wallet accepted the
-  // bundle. Show the success modal only after the bundle reaches success
-  // and a real onchain transaction hash is available.
   useEffect(() => {
     if (
       status === "sending" &&
@@ -97,7 +104,6 @@ export function TipCard({
       setStatus("success");
     }
   }, [callsStatus?.status, resolvedTxHash, status]);
-
 
   useEffect(() => {
     if (status !== "sending" && !isPending) {
@@ -118,10 +124,6 @@ export function TipCard({
     return selected;
   }, [isCustom, custom, selected]);
 
-  // Records the tip for the public history feed once the real onchain tx
-  // hash resolves (callsId/onSuccess only gives a bundle id, not a hash).
-  // Guarded by a ref so it fires exactly once per tip, not on every
-  // re-render while useCallsStatus keeps polling.
   useEffect(() => {
     if (
       resolvedTxHash &&
@@ -138,17 +140,15 @@ export function TipCard({
           amountUsdc: amount,
           txHash: resolvedTxHash,
           tokenSymbol,
+          feeBps: effectiveFeeBps,
         }),
-      }).catch(() => {
-        // History recording is best-effort — never surface this to the tipper.
-      });
+      }).catch(() => {});
     }
-  }, [resolvedTxHash, address, tokenSymbol, recipient, amount]);
-
+  }, [resolvedTxHash, address, tokenSymbol, recipient, amount, effectiveFeeBps]);
 
   const { fee, recipientAmount } = useMemo(
-    () => splitTipAmount(amount || 0, decimals),
-    [amount, decimals]
+    () => splitTipAmount(amount || 0, decimals, effectiveFeeBps),
+    [amount, decimals, effectiveFeeBps]
   );
 
   async function handleTip() {
@@ -170,9 +170,8 @@ export function TipCard({
     setErrorMsg("");
 
     try {
-      // Two transfers batched into one wallet confirmation where the
-      // connector supports EIP-5792 (Smart Wallet, Farcaster wallet, etc.);
-      // falls back to sequential prompts on wallets without batching.
+      // For $ZAP holders (0% fee): single transfer to creator only.
+      // For normal users (2% fee): two transfers — creator + platform fee.
       const calls = [
         {
           capabilities: paymasterSupported
@@ -189,7 +188,11 @@ export function TipCard({
             args: [recipient, recipientAmount],
           }),
         },
-        {
+      ];
+
+      // Only add fee transfer when fee > 0
+      if (fee > BigInt(0)) {
+        calls.push({
           capabilities: paymasterSupported
             ? {
                 paymasterService: {
@@ -203,8 +206,8 @@ export function TipCard({
             functionName: "transfer",
             args: [PLATFORM_FEE_WALLET, fee],
           }),
-        },
-      ];
+        });
+      }
 
       sendCalls(
         {
@@ -217,9 +220,6 @@ export function TipCard({
                   },
                 }
               : {}),
-            // Base ERC-8021 attribution. `optional: true` means wallets
-            // that don't support dataSuffix simply ignore it rather than
-            // failing the whole batch.
             dataSuffix: {
               value: BASE_BUILDER_CODE_SUFFIX,
               optional: true,
@@ -230,21 +230,19 @@ export function TipCard({
           onSuccess: (data) => {
             setCallsId(data.id);
             setStatus("sending");
-              if (recipientFid) {
-                fetch("/api/notify-tip", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    fid: recipientFid,
-                    walletAddress: recipient,
-                    amount,
-                    tokenSymbol,
-                    callsId: data.id,
-                  }),
-                }).catch(() => {
-                  // Notification is best-effort — never surface this to the tipper.
-                });
-              }
+            if (recipientFid) {
+              fetch("/api/notify-tip", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  fid: recipientFid,
+                  walletAddress: recipient,
+                  amount,
+                  tokenSymbol,
+                  callsId: data.id,
+                }),
+              }).catch(() => {});
+            }
           },
           onError: (err) => {
             setErrorMsg(err.message.split("\n")[0].slice(0, 140));
@@ -257,6 +255,10 @@ export function TipCard({
       setStatus("error");
     }
   }
+
+  const feePercent = effectiveFeeBps / 100;
+  const feeAmount = amount ? (amount * effectiveFeeBps) / 10000 : 0;
+  const creatorReceives = amount ? amount - feeAmount : 0;
 
   return (
     <div className="glass-card w-full max-w-md p-6">
@@ -272,8 +274,36 @@ export function TipCard({
         100% onchain. Delivered to {recipientLabel} in seconds.
       </p>
 
-      {/* Token selector — USDC remains the default; VVV and DIEM are
-          optional secondary Venice/ecosystem payment tokens. */}
+      {/* Recipient identity — clearly shows who you're tipping */}
+      {recipientAddress && recipientAddress !== recipient && (
+        <div className="mt-3 flex items-center gap-3 rounded-xl border border-base-blue/20 bg-base-blue/[0.04] p-3">
+          {recipientPfpUrl ? (
+            <img
+              src={recipientPfpUrl}
+              width={40}
+              height={40}
+              className="rounded-full"
+              alt=""
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-base-blue/15 text-sm font-bold text-base-blueLight">
+              {(recipientUsername ?? "B").slice(0, 1).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            {recipientUsername && (
+              <p className="truncate text-sm font-semibold text-white">
+                @{recipientUsername}
+              </p>
+            )}
+            <p className="truncate text-xs text-white/50">
+              {formatAddress(recipientAddress)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Token selector */}
       <div className="mt-4 flex gap-2">
         {TIPPABLE_TOKENS.map((t) => (
           <button
@@ -328,19 +358,21 @@ export function TipCard({
         </button>
       </div>
 
+      {/* Fee breakdown — transparent and clear */}
       <div className="mt-5 space-y-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
         <div className="flex justify-between text-white/55">
           <span>{recipientLabel} receives</span>
           <span className="text-white/85">
-            {formatUsdc(amount ? amount * (1 - PLATFORM_FEE_BPS / 10000) : 0)}{" "}
-            {tokenSymbol}
+            {formatUsdc(creatorReceives)} {tokenSymbol}
           </span>
         </div>
         <div className="flex justify-between text-white/40">
-          <span>Platform fee ({PLATFORM_FEE_BPS / 100}%)</span>
           <span>
-            {formatUsdc(amount ? amount * (PLATFORM_FEE_BPS / 10000) : 0)}{" "}
-            {tokenSymbol}
+            Platform fee{isZapHolder && " ($ZAP holder)"}
+            {!isZapHolder && ` (${feePercent}%)`}
+          </span>
+          <span>
+            {formatUsdc(feeAmount)} {tokenSymbol}
           </span>
         </div>
         <div className="!mt-2.5 flex justify-between border-t border-white/[0.06] pt-2.5 font-semibold text-white">
@@ -352,11 +384,18 @@ export function TipCard({
       </div>
 
       <p className="mt-3 text-center text-[11px] leading-relaxed text-white/35">
-        {tokenSymbol === "DIEM"
-          ? "DIEM is an optional Venice ecosystem token. A "
-          : "A "}
-        {PLATFORM_FEE_BPS / 100}% platform fee supports development —
-        shown above, nothing hidden.
+        {isZapHolder ? (
+          <>
+            $ZAP fee benefit applied — holding {ZAP_HOLDER_THRESHOLD}+ $ZAP
+            grants 0% platform fee on every tip.
+          </>
+        ) : (
+          <>
+            {feePercent}% platform fee supports development —
+            shown above, nothing hidden. Hold {ZAP_HOLDER_THRESHOLD}+ $ZAP
+            for 0% fee.
+          </>
+        )}
       </p>
 
       <button
