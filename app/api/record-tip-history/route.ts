@@ -12,7 +12,11 @@ import {
   DIEM_DECIMALS,
   USDC_ADDRESS,
   USDC_DECIMALS,
+  PLATFORM_FEE_BPS,
   PLATFORM_FEE_WALLET,
+  ZAP_TOKEN_ADDRESS,
+  ZAP_HOLDER_THRESHOLD,
+  ERC20_ABI,
 } from "@/lib/constants";
 import { splitTipAmount } from "@/lib/utils";
 
@@ -97,14 +101,51 @@ export async function POST(req: Request) {
       );
     }
 
-    // TipCard sends:
-    // - 2% mode: creator transfer + platform fee transfer
-    // - 0% $ZAP-holder mode: creator transfer only
+    // Determine the fee mode on the server. Never trust feeBps from the client.
+    // The sender must have held the required $ZAP balance at the tip's block
+    // to qualify for the 0% platform fee.
+    let isZapHolder = false;
+    try {
+      const zapBalance = await client.readContract({
+        address: ZAP_TOKEN_ADDRESS,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [from as `0x${string}`],
+        blockNumber: receipt.blockNumber,
+      });
+
+      const zapThreshold =
+        BigInt(ZAP_HOLDER_THRESHOLD) * BigInt(10) ** BigInt(18);
+
+      isZapHolder = zapBalance >= zapThreshold;
+    } catch (err) {
+      console.warn(
+        "record-tip-history: unable to verify $ZAP holder status",
+        from,
+        err
+      );
+    }
+
+    const serverFeeBps = isZapHolder ? 0 : PLATFORM_FEE_BPS;
+
+    // If the client supplied a fee mode, require it to agree with the
+    // server-derived mode. This catches stale or manipulated client state.
+    if (feeBps !== undefined && feeBps !== serverFeeBps) {
+      return Response.json(
+        {
+          ok: false,
+          error: "fee mode does not match sender eligibility",
+          expectedFeeBps: serverFeeBps,
+        },
+        { status: 400 }
+      );
+    }
+
     // Use the selected token's decimals for exact onchain verification.
     const { fee, recipientAmount } = splitTipAmount(
       amountUsdc,
       tokenConfig.decimals,
-      feeBps
+      serverFeeBps
     );
 
     let creatorMatched = false;
