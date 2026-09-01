@@ -20,7 +20,6 @@ import { ZapWidget } from "@/components/ZapWidget";
 import { ZapSection } from "@/components/ZapSection";
 import { AgentExplanation } from "@/components/AgentExplanation";
 import { BuiltWith } from "@/components/BuiltWith";
-import { Testimonial } from "@/components/Testimonial";
 import { BaseAlignment } from "@/components/BaseAlignment";
 import { Footer } from "@/components/Footer";
 import { FirstVisitModal } from "@/components/FirstVisitModal";
@@ -195,7 +194,6 @@ function HomeContent() {
         </div>
       </section>
 
-      <Testimonial />
       <BaseAlignment />
       <BuiltWith />
       <Footer />
