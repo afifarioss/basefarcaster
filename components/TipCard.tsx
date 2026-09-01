@@ -275,7 +275,7 @@ export function TipCard({
       </p>
 
       {/* Recipient identity — clearly shows who you're tipping */}
-      {recipientAddress && recipientAddress !== recipient && (
+      {recipientUsername && (
         <div className="mt-3 flex items-center gap-3 rounded-xl border border-base-blue/20 bg-base-blue/[0.04] p-3">
           {recipientPfpUrl ? (
             <img

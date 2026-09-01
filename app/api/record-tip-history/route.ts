@@ -5,6 +5,7 @@ import {
   http,
   decodeEventLog,
   parseAbiItem,
+
 } from "viem";
 import { base } from "viem/chains";
 import {
@@ -14,8 +15,13 @@ import {
   USDC_DECIMALS,
   PLATFORM_FEE_BPS,
   FEE_DENOMINATOR,
+  ZAP_TOKEN_ADDRESS,
+  ZAP_HOLDER_THRESHOLD,
+  ERC20_ABI,
 } from "@/lib/constants";
 import { splitTipAmount } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL as string,
@@ -33,6 +39,40 @@ const TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
 const TRANSFER_EVENT = parseAbiItem(
   "event Transfer(address indexed from, address indexed to, uint256 value)"
 );
+
+/**
+ * Server-side verification that the sender actually qualifies for the
+ * 0% $ZAP holder fee. Reads the sender's $ZAP token balance from the
+ * block the tip tx was mined in (using the tx receipt's blockNumber),
+ * so the check reflects the onchain state at the time of tipping.
+ *
+ * Returns true if the sender holds >= ZAP_HOLDER_THRESHOLD $ZAP.
+ * Returns false otherwise — the server will then require the 2% fee
+ * transfer to be present in the tx logs.
+ */
+async function verifyZapHolderStatus(
+  sender: `0x${string}`,
+  blockNumber: bigint
+): Promise<boolean> {
+  try {
+    const balance = await client.readContract({
+      address: ZAP_TOKEN_ADDRESS,
+      abi: ERC20_ABI,
+      functionName: "balanceOf",
+      args: [sender],
+      blockNumber,
+    });
+    const threshold =
+      BigInt(ZAP_HOLDER_THRESHOLD) * BigInt(10) ** BigInt(18);
+    return (balance as bigint) >= threshold;
+  } catch (err) {
+    console.warn(
+      "record-tip-history: $ZAP balance check failed, defaulting to 2% fee verification",
+      err
+    );
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -53,14 +93,6 @@ export async function POST(req: Request) {
     ) {
       return Response.json({ ok: false }, { status: 400 });
     }
-
-    // feeBps defaults to PLATFORM_FEE_BPS (2%) for normal tips.
-    // A $ZAP holder sends feeBps = 0, meaning no platform fee transfer
-    // — the creator receives the full amount.
-    const effectiveFeeBps =
-      typeof feeBps === "number" && feeBps >= 0 && feeBps <= PLATFORM_FEE_BPS
-        ? feeBps
-        : PLATFORM_FEE_BPS;
 
     const selectedToken = tokenSymbol ?? "USDC";
 
@@ -103,6 +135,28 @@ export async function POST(req: Request) {
         { ok: false, error: "sender does not match transaction" },
         { status: 400 }
       );
+    }
+
+    // Server-side $ZAP eligibility check.
+    // The client claims feeBps=0, but we don't trust it — we verify
+    // the sender's actual $ZAP balance at the tx block. If they don't
+    // hold 100+ $ZAP, we fall back to requiring the full 2% fee.
+    const clientClaimsZeroFee =
+      typeof feeBps === "number" && feeBps === 0;
+
+    let effectiveFeeBps: number;
+
+    if (clientClaimsZeroFee) {
+      const isVerifiedZapHolder = await verifyZapHolderStatus(
+        from as `0x${string}`,
+        receipt.blockNumber
+      );
+      effectiveFeeBps = isVerifiedZapHolder ? 0 : PLATFORM_FEE_BPS;
+    } else {
+      effectiveFeeBps =
+        typeof feeBps === "number" && feeBps >= 0 && feeBps <= PLATFORM_FEE_BPS
+          ? feeBps
+          : PLATFORM_FEE_BPS;
     }
 
     // Compute expected amounts using the effective fee rate.
