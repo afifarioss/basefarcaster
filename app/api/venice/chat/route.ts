@@ -1,4 +1,18 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { Redis } from "@upstash/redis";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+export const dynamic = "force-dynamic";
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL as string,
+  token: process.env.KV_REST_API_TOKEN as string,
+});
+
+// 8 messages per 60s per IP — chat generates paid Venice API calls,
+// but legitimate usage is conversational (one message every few seconds).
+const RATE_LIMIT = 8;
+const RATE_WINDOW_SECONDS = 60;
 
 const VENICE_URL = "https://api.venice.ai/api/v1/chat/completions";
 const VENICE_MODEL = process.env.VENICE_CHAT_MODEL || "qwen3-4b";
@@ -44,6 +58,21 @@ type ChatMessage = {
 };
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed, resetSeconds } = await checkRateLimit(
+    redis,
+    `venice-chat:${ip}`,
+    RATE_LIMIT,
+    RATE_WINDOW_SECONDS
+  );
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many messages, please slow down." },
+      { status: 429, headers: { "Retry-After": String(resetSeconds) } }
+    );
+  }
+
   const apiKey = process.env.VENICE_API_KEY;
 
   if (!apiKey) {
@@ -116,51 +145,31 @@ export async function POST(req: NextRequest) {
         `VENICE CHAT: API returned ${response.status}: ${errorText.slice(0, 500)}`
       );
 
-      if (response.status === 402) {
+      if (response.status === 429) {
         return Response.json(
-          {
-            code: "venice_credit_limited",
-            error:
-              "Venice AI is in limited preview on this deployment. The Venice connection is live, but this deployment currently has no available inference credits.",
-          },
-          { status: 503 }
+          { error: "Venice API rate limit reached. Please try again shortly." },
+          { status: 429 }
         );
       }
 
       return Response.json(
-        {
-          code: response.status === 401 ? "venice_auth_failed" : "venice_unavailable",
-          error:
-            response.status === 401
-              ? "The Venice AI connection needs attention."
-              : "Venice AI is temporarily unavailable.",
-        },
-        { status: response.status === 429 ? 429 : 502 }
-      );
-    }
-
-    const data = await response.json();
-    const answer = data?.choices?.[0]?.message?.content;
-
-    if (typeof answer !== "string" || !answer.trim()) {
-      return Response.json(
-        { error: "Venice returned an empty response." },
+        { error: "Venice Assistant encountered an error. Please try again." },
         { status: 502 }
       );
     }
 
-    return Response.json({
-      answer: answer.trim(),
-      model: data.model || VENICE_MODEL,
-    });
-  } catch (error) {
-    console.error(
-      "VENICE CHAT: request failed",
-      error instanceof Error ? error.message : String(error)
-    );
+    const data = await response.json();
+    const reply =
+      data?.choices?.[0]?.message?.content ??
+      "Sorry, I couldn't generate a response.";
 
+    return Response.json({
+      role: "assistant",
+      content: reply,
+    });
+  } catch {
     return Response.json(
-      { error: "Unable to reach the Venice Assistant." },
+      { error: "Something went wrong talking to Venice. Please try again." },
       { status: 500 }
     );
   }

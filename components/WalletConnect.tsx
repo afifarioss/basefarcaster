@@ -5,13 +5,10 @@ import { useAccount, useConnect, useDisconnect, useBalance } from "wagmi";
 import { formatAddress } from "@/lib/utils";
 import { USDC_ADDRESS } from "@/lib/constants";
 
+// Kept in sync with the connectors configured in app/providers.tsx.
 const CONNECTOR_LABELS: Record<string, string> = {
   baseAccount: "Base Account",
   farcasterMiniApp: "Farcaster Wallet",
-  coinbaseWalletSDK: "Coinbase / Base Smart Wallet",
-  metaMaskSDK: "MetaMask",
-  metaMask: "MetaMask",
-  injected: "Browser Wallet",
 };
 
 function connectorLabel(id: string, name: string) {

@@ -1,4 +1,5 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { Redis } from "@upstash/redis";
 import {
   USDC_ADDRESS,
   USDC_DECIMALS,
@@ -7,6 +8,20 @@ import {
   CHAIN,
 } from "@/lib/constants";
 import { splitTipAmount } from "@/lib/utils";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+export const dynamic = "force-dynamic";
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL as string,
+  token: process.env.KV_REST_API_TOKEN as string,
+});
+
+// 15 requests per 60s per IP — discovery endpoint, returns static/computed
+// info only (no external API calls), but still needs protection against
+// brute-force tool enumeration or request flooding.
+const RATE_LIMIT = 15;
+const RATE_WINDOW_SECONDS = 60;
 
 // Free discovery tools only. build_tip_calldata (the tool that produces
 // real, usable transfer calldata) has been split out to
@@ -21,6 +36,21 @@ import { splitTipAmount } from "@/lib/utils";
 // Next.js build. mcp-server/ and x402/basezap-agent/ are separate isolated
 // packages and keep their own manually-synced copies by necessity.
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed, resetSeconds } = await checkRateLimit(
+    redis,
+    `agent:${ip}`,
+    RATE_LIMIT,
+    RATE_WINDOW_SECONDS
+  );
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests, please slow down." },
+      { status: 429, headers: { "Retry-After": String(resetSeconds) } }
+    );
+  }
+
   const body = await req.json();
   const { tool, args } = body ?? {};
 

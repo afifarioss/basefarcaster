@@ -20,6 +20,8 @@ import { ZapWidget } from "@/components/ZapWidget";
 import { ZapSection } from "@/components/ZapSection";
 import { AgentExplanation } from "@/components/AgentExplanation";
 import { BuiltWith } from "@/components/BuiltWith";
+import { Testimonial } from "@/components/Testimonial";
+import { BaseAlignment } from "@/components/BaseAlignment";
 import { Footer } from "@/components/Footer";
 import { FirstVisitModal } from "@/components/FirstVisitModal";
 import {
@@ -34,7 +36,7 @@ const STEPS = [
   },
   {
     title: "Confirm in your wallet",
-    body: "Base Smart Wallet, Farcaster, MetaMask, Rainbow — your call.",
+    body: "Connect with Base Account or Farcaster Wallet.",
   },
   {
     title: "It lands instantly",
@@ -81,8 +83,8 @@ function HomeContent() {
       <FirstVisitModal />
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.06] bg-surface-void/80 px-5 py-4 backdrop-blur-xl">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0A0A0A] border border-[#D4AF37]/40">
-            <span className="font-display text-sm font-bold text-[#D4AF37]">Z</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-base-blue border border-base-blue/60">
+            <span className="font-display text-sm font-bold text-white">Z</span>
           </div>
           <span className="font-display text-[15px] font-bold text-white">
             {APP_NAME}
@@ -193,6 +195,8 @@ function HomeContent() {
         </div>
       </section>
 
+      <Testimonial />
+      <BaseAlignment />
       <BuiltWith />
       <Footer />
     </main>

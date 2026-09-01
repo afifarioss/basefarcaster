@@ -16,6 +16,8 @@ import {
  *
  * Fee is rounded down; recipient receives the remainder, so the two legs
  * always sum exactly back to the original transfer amount.
+ *
+ * Pass feeBps = 0 for $ZAP holders who get 0% platform fee.
  */
 export function splitTipAmount(
   amount: number,

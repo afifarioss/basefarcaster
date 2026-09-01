@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { APP_URL } from "@/lib/constants";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+export const dynamic = "force-dynamic";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL as string,
   token: process.env.KV_REST_API_TOKEN as string,
 });
+
+// 5 notifications per 60s per IP — tighter than search endpoints since
+// each call fires real Neynar + Base API requests to real users.
+const RATE_LIMIT = 5;
+const RATE_WINDOW_SECONDS = 60;
 
 /**
  * Notifies a tip recipient across both notification surfaces:
@@ -20,6 +28,21 @@ const redis = new Redis({
  * block or fail the tip flow itself.
  */
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed, resetSeconds } = await checkRateLimit(
+    redis,
+    `notify-tip:${ip}`,
+    RATE_LIMIT,
+    RATE_WINDOW_SECONDS
+  );
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests, please slow down." },
+      { status: 429, headers: { "Retry-After": String(resetSeconds) } }
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const fid = body?.fid;
   const walletAddress = body?.walletAddress;
