@@ -184,25 +184,30 @@ export function UsernameInput({
       )}
 
       {status === "found" && resolved && (
-        <div className="mt-2 flex items-center gap-2 rounded-lg border border-base-blue/25 bg-base-blue/5 px-3 py-2">
-          {resolved.pfpUrl ? (
-            <img
-              src={resolved.pfpUrl}
-              width={28}
-              height={28}
-              className="rounded-full"
-              alt=""
-            />
-          ) : (
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-base-blue/15 text-xs font-bold text-base-blueLight">
-              B
+        <div className="mt-2 rounded-lg border border-base-blue/25 bg-base-blue/5 px-3 py-3">
+          <div className="flex items-center gap-3">
+            {resolved.pfpUrl ? (
+              <img
+                src={resolved.pfpUrl}
+                width={40}
+                height={40}
+                className="rounded-full"
+                alt=""
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-base-blue/15 text-sm font-bold text-base-blueLight">
+                {(resolved.username ?? "B").slice(0, 1).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-white">
+                {resolved.displayName || `@${resolved.username}`}
+              </p>
+              <p className="truncate text-xs text-white/50">
+                @{resolved.username} · {resolved.address.slice(0, 8)}…{resolved.address.slice(-6)}
+              </p>
             </div>
-          )}
-
-          <span className="text-sm text-white/85">
-            {resolved.displayName ||
-              `@${resolved.username}`}
-          </span>
+          </div>
         </div>
       )}
 

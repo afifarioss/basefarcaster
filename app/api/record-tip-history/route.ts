@@ -12,6 +12,8 @@ import {
   DIEM_DECIMALS,
   USDC_ADDRESS,
   USDC_DECIMALS,
+  PLATFORM_FEE_BPS,
+  FEE_DENOMINATOR,
 } from "@/lib/constants";
 import { splitTipAmount } from "@/lib/utils";
 
@@ -22,7 +24,7 @@ const redis = new Redis({
 
 const client = createPublicClient({
   chain: base,
-  transport: http(),
+  transport: http(process.env.BASE_RPC_URL || undefined),
 });
 
 const MAX_REASONABLE_USDC = 1_000_000;
@@ -34,7 +36,8 @@ const TRANSFER_EVENT = parseAbiItem(
 
 export async function POST(req: Request) {
   try {
-    const { from, to, amountUsdc, txHash, tokenSymbol } = await req.json();
+    const { from, to, amountUsdc, txHash, tokenSymbol, feeBps } =
+      await req.json();
 
     if (
       typeof from !== "string" ||
@@ -51,10 +54,16 @@ export async function POST(req: Request) {
       return Response.json({ ok: false }, { status: 400 });
     }
 
+    // feeBps defaults to PLATFORM_FEE_BPS (2%) for normal tips.
+    // A $ZAP holder sends feeBps = 0, meaning no platform fee transfer
+    // — the creator receives the full amount.
+    const effectiveFeeBps =
+      typeof feeBps === "number" && feeBps >= 0 && feeBps <= PLATFORM_FEE_BPS
+        ? feeBps
+        : PLATFORM_FEE_BPS;
+
     const selectedToken = tokenSymbol ?? "USDC";
 
-    // History verification supports USDC and optional DIEM.
-    // VVV remains outside this verification path for now.
     const tokenConfig =
       selectedToken === "USDC"
         ? { address: USDC_ADDRESS, decimals: USDC_DECIMALS }
@@ -96,16 +105,25 @@ export async function POST(req: Request) {
       );
     }
 
-    // TipCard sends the full tip amount as two ERC20 transfers.
-    // Use the selected token's own decimals so DIEM is handled as 18 decimals.
-    const { recipientAmount } = splitTipAmount(
+    // Compute expected amounts using the effective fee rate.
+    // For $ZAP holders (feeBps=0): recipientAmount = total, fee = 0
+    // For normal users (feeBps=200): recipientAmount = total - 2%, fee = 2%
+    const { recipientAmount, fee } = splitTipAmount(
       amountUsdc,
-      tokenConfig.decimals
+      tokenConfig.decimals,
+      effectiveFeeBps
     );
 
-    let matched = false;
+    // Match the creator transfer — this is the primary tip identification.
+    // Both 2% and 0% tips must have this transfer to the recipient.
+    let recipientMatched = false;
+    let feeMatched = effectiveFeeBps === 0; // 0% tips don't need fee match
+
     for (const log of receipt.logs) {
-      if (log.address.toLowerCase() !== tokenConfig.address.toLowerCase()) continue;
+      if (
+        log.address.toLowerCase() !== tokenConfig.address.toLowerCase()
+      )
+        continue;
       try {
         const decoded = decodeEventLog({
           abi: [TRANSFER_EVENT],
@@ -121,26 +139,36 @@ export async function POST(req: Request) {
           dTo.toLowerCase() === to.toLowerCase() &&
           dValue === recipientAmount
         ) {
-          matched = true;
-          break;
+          recipientMatched = true;
+        }
+
+        // For 2% tips, also verify the fee transfer exists
+        if (
+          effectiveFeeBps > 0 &&
+          fee > BigInt(0) &&
+          dFrom.toLowerCase() === from.toLowerCase() &&
+          dTo.toLowerCase() ===
+            (process.env.NEXT_PUBLIC_FEE_WALLET ?? "").toLowerCase() &&
+          dValue === fee
+        ) {
+          feeMatched = true;
         }
       } catch {
         continue;
       }
     }
 
-    if (!matched) {
+    if (!recipientMatched || !feeMatched) {
       return Response.json(
         {
           ok: false,
-          error: `no matching ${selectedToken} transfer found in transaction`,
+          error: `tip verification failed: recipient=${recipientMatched}, fee=${feeMatched}`,
         },
         { status: 400 }
       );
     }
 
-    // Idempotency is recorded only after the transaction has been fully
-    // verified. An invalid first attempt must not poison a later valid retry.
+    // Idempotency — only after full verification
     const isNewTx = await redis.set(`tiphistory:seen:${txHash}`, "1", {
       nx: true,
       ex: 86400,
@@ -151,24 +179,33 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, duplicate: true });
     }
 
+    const fromKey = from.toLowerCase();
+    const toKey = to.toLowerCase();
     const timestamp = Date.now();
     const record = JSON.stringify({
-      from: from.toLowerCase(),
-      to: to.toLowerCase(),
+      from: fromKey,
+      to: toKey,
       amountUsdc,
       txHash,
       tokenSymbol: tokenSymbol ?? "USDC",
       timestamp,
+      feeBps: effectiveFeeBps,
     });
 
-    // Sorted set, scored by timestamp — newest-first pagination via zrange rev.
-    // txHash inside the JSON member keeps every entry unique.
-    await redis.zadd("tips:history", { score: timestamp, member: record });
+    const writes: Promise<unknown>[] = [
+      redis.zadd("tips:history", { score: timestamp, member: record }),
+    ];
+    if (selectedToken === "USDC") {
+      writes.push(
+        redis.zincrby("leaderboard:senders", amountUsdc, fromKey),
+        redis.zincrby("leaderboard:recipients", amountUsdc, toKey)
+      );
+    }
+    await Promise.all(writes);
 
     return Response.json({ ok: true });
   } catch (err) {
     console.error("record-tip-history error:", err);
-    // Best-effort — never block or surface this to the tipper.
     return Response.json({ ok: false }, { status: 200 });
   }
 }

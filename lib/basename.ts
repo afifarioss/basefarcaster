@@ -1,18 +1,12 @@
-import {
-  createPublicClient,
-  http,
-  isAddress,
-  namehash,
-} from "viem";
+import { createPublicClient, http, isAddress } from "viem";
 import { base } from "viem/chains";
 
-/**
- * Base Mainnet Basenames resolver.
- *
- * This is the upgradeable L2 resolver proxy published by
- * Base's official Basenames repository.
- */
-export const BASENAME_L2_RESOLVER =
+const client = createPublicClient({
+  chain: base,
+  transport: http(process.env.BASE_RPC_URL || undefined),
+});
+
+const BASENAME_RESOLVER =
   "0x426fA03fB86E510d0Dd9F70335Cf102a98b10875" as const;
 
 const BASENAME_RESOLVER_ABI = [
@@ -35,7 +29,23 @@ const BASENAME_RESOLVER_ABI = [
   },
 ] as const;
 
-export type BasenameResolution = {
+function normalizeBasename(name: string): string {
+  return name.trim().toLowerCase().replace(/^@/, "");
+}
+
+function isBasename(name: string): boolean {
+  return (
+    name.endsWith(".base.eth") &&
+    name.length > ".base.eth".length
+  );
+}
+
+async function namehash(name: string): Promise<`0x${string}`> {
+  const { namehash: viemNamehash } = await import("viem/ens");
+  return viemNamehash(name);
+}
+
+export type ResolvedBasename = {
   name: string;
   address: `0x${string}`;
   chain: "base";
@@ -43,54 +53,27 @@ export type BasenameResolution = {
   resolver: `0x${string}`;
 };
 
-function normalizeBasename(input: string): string {
-  const value = input
-    .trim()
-    .replace(/^@/, "")
-    .toLowerCase();
-
-  if (value.endsWith(".base.eth")) {
-    return value;
-  }
-
-  return `${value}.base.eth`;
-}
-
 export async function resolveBasename(
   input: string
-): Promise<BasenameResolution | null> {
-  if (!input?.trim()) {
-    return null;
-  }
-
+): Promise<ResolvedBasename | null> {
   const name = normalizeBasename(input);
 
-  if (
-    !name ||
-    name === ".base.eth" ||
-    !name.endsWith(".base.eth")
-  ) {
+  if (!isBasename(name)) {
     return null;
   }
 
-  const rpcUrl =
-    process.env.BASE_RPC_URL ||
-    "https://mainnet.base.org";
-
-  const client = createPublicClient({
-    chain: base,
-    transport: http(rpcUrl),
-  });
-
   try {
+    const node = await namehash(name);
+
     const address = await client.readContract({
-      address: BASENAME_L2_RESOLVER,
+      address: BASENAME_RESOLVER,
       abi: BASENAME_RESOLVER_ABI,
       functionName: "addr",
-      args: [namehash(name)],
+      args: [node],
     });
 
     if (
+      !address ||
       !isAddress(address) ||
       address === "0x0000000000000000000000000000000000000000"
     ) {
@@ -102,7 +85,7 @@ export async function resolveBasename(
       address,
       chain: "base",
       chainId: 8453,
-      resolver: BASENAME_L2_RESOLVER,
+      resolver: BASENAME_RESOLVER,
     };
   } catch {
     return null;

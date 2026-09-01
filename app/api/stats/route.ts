@@ -7,6 +7,18 @@ import {
   PLATFORM_FEE_BPS,
   FEE_DENOMINATOR,
 } from "../../../lib/constants";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { Redis } from "@upstash/redis";
+
+
+export const dynamic = "force-dynamic";
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL as string,
+  token: process.env.KV_REST_API_TOKEN as string,
+});
+
+const RATE_LIMIT = 10;
+const RATE_WINDOW_SECONDS = 60;
 
 /**
  * Real social-proof data derived from Base onchain logs.
@@ -24,54 +36,65 @@ export const revalidate = 30;
 
 const client = createPublicClient({
   chain: base,
-  transport: http(),
+  transport: http(process.env.BASE_RPC_URL || undefined),
 });
 
-// Base produces a block roughly every 2 seconds, so ~43,200 blocks is about 24h.
+// Base produces a block roughly every 2 seconds, so ~43,200 blocks ≈ 24h.
 const LOOKBACK_BLOCKS = BigInt(43_200);
 const WINDOW_HOURS = 24;
 
-// Base RPC providers commonly cap eth_getLogs at a 10,000-block range.
-// Use 9,000 as a safety margin below that cap.
-const CHUNK_SIZE = BigInt(9_000);
-
-const TRANSFER_EVENT = parseAbiItem(
-  "event Transfer(address indexed from, address indexed to, uint256 value)"
-);
-
-async function fetchLogsChunked(fromBlock: bigint, toBlock: bigint) {
-  const allLogs = [];
-  let chunkStart = fromBlock;
-
-  while (chunkStart <= toBlock) {
-    const chunkEnd =
-      chunkStart + CHUNK_SIZE - BigInt(1) > toBlock
-        ? toBlock
-        : chunkStart + CHUNK_SIZE - BigInt(1);
-
-    const chunkLogs = await client.getLogs({
-      address: USDC_ADDRESS,
-      event: TRANSFER_EVENT,
-      args: { to: PLATFORM_FEE_WALLET },
-      fromBlock: chunkStart,
-      toBlock: chunkEnd,
-    });
-
-    allLogs.push(...chunkLogs);
-    chunkStart = chunkEnd + BigInt(1);
+export async function GET(req: Request) {
+  const ip = getClientIp(req);
+  const { allowed, resetSeconds } = await checkRateLimit(
+    redis,
+    `stats:${ip}`,
+    RATE_LIMIT,
+    RATE_WINDOW_SECONDS
+  );
+  if (!allowed) {
+    return Response.json(
+      { error: "Too many requests, please slow down." },
+      { status: 429, headers: { "Retry-After": String(resetSeconds) } }
+    );
   }
 
-  return allLogs;
-}
-
-export async function GET() {
   try {
     const latest = await client.getBlockNumber();
 
     const fromBlock =
       latest > LOOKBACK_BLOCKS ? latest - LOOKBACK_BLOCKS : BigInt(0);
 
-    const logs = await fetchLogsChunked(fromBlock, latest);
+    const TRANSFER_EVENT = parseAbiItem(
+      "event Transfer(address indexed from, address indexed to, uint256 value)"
+    );
+
+    // Base RPC providers commonly cap eth_getLogs at 10,000 blocks.
+    // Query the 24h window in safe chunks instead of requesting 43,200 blocks at once.
+    const MAX_LOG_BLOCK_RANGE = BigInt(9_000);
+    const logs = [];
+
+    for (
+      let chunkFrom = fromBlock;
+      chunkFrom <= latest;
+      chunkFrom += MAX_LOG_BLOCK_RANGE + BigInt(1)
+    ) {
+      const chunkTo =
+        chunkFrom + MAX_LOG_BLOCK_RANGE > latest
+          ? latest
+          : chunkFrom + MAX_LOG_BLOCK_RANGE;
+
+      const chunkLogs = await client.getLogs({
+        address: USDC_ADDRESS,
+        event: TRANSFER_EVENT,
+        args: {
+          to: PLATFORM_FEE_WALLET,
+        },
+        fromBlock: chunkFrom,
+        toBlock: chunkTo,
+      });
+
+      logs.push(...chunkLogs);
+    }
 
     const tipCount = logs.length;
 

@@ -46,3 +46,5 @@ skills-lock.json
 .env
 .env.local
 .env.*.local
+
+/mcp-server/node_modules/
