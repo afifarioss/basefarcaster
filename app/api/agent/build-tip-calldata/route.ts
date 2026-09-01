@@ -62,7 +62,7 @@ async function handler(req: NextRequest): Promise<NextResponse<any>> {
 
 export const POST = withX402(
   handler,
-  "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918",
+  PLATFORM_FEE_WALLET,
   {
     price: "$0.001",
     network: "base",
