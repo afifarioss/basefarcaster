@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { isAddress } from "viem";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { Hero } from "@/components/Hero";
+import { SocialProofSection } from "@/components/SocialProofSection";
 import { TipCard } from "@/components/TipCard";
 import { UsernameInput } from "@/components/UsernameInput";
 import { TrustChecklist } from "@/components/TrustChecklist";
@@ -16,6 +17,7 @@ import { RecentZaps } from "@/components/RecentZaps";
 import { Leaderboard } from "@/components/Leaderboard";
 import { TipHistory } from "@/components/TipHistory";
 import { ZapWidget } from "@/components/ZapWidget";
+import { ZapSection } from "@/components/ZapSection";
 import { AgentExplanation } from "@/components/AgentExplanation";
 import { BuiltWith } from "@/components/BuiltWith";
 import { Footer } from "@/components/Footer";
@@ -107,6 +109,8 @@ function HomeContent() {
         }
       />
 
+      <SocialProofSection />
+
       <section className="px-5">
         <div className="mx-auto flex max-w-md flex-col items-center gap-5">
           <BetaStats />
@@ -128,6 +132,7 @@ function HomeContent() {
           <Leaderboard />
           <TipHistory />
           <ShareButton className="btn-secondary w-full max-w-md" />
+          <ZapSection />
           <ZapWidget />
           <AgentExplanation />
           <div className="w-full max-w-md space-y-2">
