@@ -35,7 +35,7 @@ const TRANSFER_EVENT = parseAbiItem(
 
 export async function POST(req: Request) {
   try {
-    const { from, to, amountUsdc, txHash, tokenSymbol } = await req.json();
+    const { from, to, amountUsdc, txHash, tokenSymbol, feeBps } = await req.json();
 
     if (
       typeof from !== "string" ||
@@ -97,19 +97,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // TipCard sends the full tip amount as two ERC20 transfers.
-    // Use the selected token's own decimals so DIEM is handled as 18 decimals.
+    // TipCard sends:
+    // - 2% mode: creator transfer + platform fee transfer
+    // - 0% $ZAP-holder mode: creator transfer only
+    // Use the selected token's decimals for exact onchain verification.
     const { fee, recipientAmount } = splitTipAmount(
       amountUsdc,
-      tokenConfig.decimals
+      tokenConfig.decimals,
+      feeBps
     );
 
     let creatorMatched = false;
-    let feeMatched = false;
+    let feeMatched = fee === BigInt(0);
     const expectedFeeWallet = PLATFORM_FEE_WALLET.toLowerCase();
 
     for (const log of receipt.logs) {
-      if (log.address.toLowerCase() !== tokenConfig.address.toLowerCase()) continue;
+      if (
+        log.address.toLowerCase() !== tokenConfig.address.toLowerCase()
+      ) {
+        continue;
+      }
 
       try {
         const decoded = decodeEventLog({
@@ -122,7 +129,9 @@ export async function POST(req: Request) {
         const dTo = decoded.args.to as `0x${string}`;
         const dValue = decoded.args.value as bigint;
 
-        if (dFrom.toLowerCase() !== from.toLowerCase()) continue;
+        if (dFrom.toLowerCase() !== from.toLowerCase()) {
+          continue;
+        }
 
         if (
           dTo.toLowerCase() === to.toLowerCase() &&
@@ -132,13 +141,16 @@ export async function POST(req: Request) {
         }
 
         if (
+          fee > BigInt(0) &&
           dTo.toLowerCase() === expectedFeeWallet &&
           dValue === fee
         ) {
           feeMatched = true;
         }
 
-        if (creatorMatched && feeMatched) break;
+        if (creatorMatched && feeMatched) {
+          break;
+        }
       } catch {
         continue;
       }
