@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { Redis } from "@upstash/redis";
 import { resolveFarcasterUser } from "@/lib/resolve-farcaster-user";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
