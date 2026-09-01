@@ -12,8 +12,7 @@ import {
   DIEM_DECIMALS,
   USDC_ADDRESS,
   USDC_DECIMALS,
-  PLATFORM_FEE_BPS,
-  FEE_DENOMINATOR,
+  PLATFORM_FEE_WALLET,
 } from "@/lib/constants";
 import { splitTipAmount } from "@/lib/utils";
 
@@ -36,8 +35,7 @@ const TRANSFER_EVENT = parseAbiItem(
 
 export async function POST(req: Request) {
   try {
-    const { from, to, amountUsdc, txHash, tokenSymbol, feeBps } =
-      await req.json();
+    const { from, to, amountUsdc, txHash, tokenSymbol } = await req.json();
 
     if (
       typeof from !== "string" ||
@@ -54,16 +52,10 @@ export async function POST(req: Request) {
       return Response.json({ ok: false }, { status: 400 });
     }
 
-    // feeBps defaults to PLATFORM_FEE_BPS (2%) for normal tips.
-    // A $ZAP holder sends feeBps = 0, meaning no platform fee transfer
-    // — the creator receives the full amount.
-    const effectiveFeeBps =
-      typeof feeBps === "number" && feeBps >= 0 && feeBps <= PLATFORM_FEE_BPS
-        ? feeBps
-        : PLATFORM_FEE_BPS;
-
     const selectedToken = tokenSymbol ?? "USDC";
 
+    // History verification supports USDC and optional DIEM.
+    // VVV remains outside this verification path for now.
     const tokenConfig =
       selectedToken === "USDC"
         ? { address: USDC_ADDRESS, decimals: USDC_DECIMALS }
@@ -105,70 +97,66 @@ export async function POST(req: Request) {
       );
     }
 
-    // Compute expected amounts using the effective fee rate.
-    // For $ZAP holders (feeBps=0): recipientAmount = total, fee = 0
-    // For normal users (feeBps=200): recipientAmount = total - 2%, fee = 2%
-    const { recipientAmount, fee } = splitTipAmount(
+    // TipCard sends the full tip amount as two ERC20 transfers.
+    // Use the selected token's own decimals so DIEM is handled as 18 decimals.
+    const { fee, recipientAmount } = splitTipAmount(
       amountUsdc,
-      tokenConfig.decimals,
-      effectiveFeeBps
+      tokenConfig.decimals
     );
 
-    // Match the creator transfer — this is the primary tip identification.
-    // Both 2% and 0% tips must have this transfer to the recipient.
-    let recipientMatched = false;
-    let feeMatched = effectiveFeeBps === 0; // 0% tips don't need fee match
+    let creatorMatched = false;
+    let feeMatched = false;
+    const expectedFeeWallet = PLATFORM_FEE_WALLET.toLowerCase();
 
     for (const log of receipt.logs) {
-      if (
-        log.address.toLowerCase() !== tokenConfig.address.toLowerCase()
-      )
-        continue;
+      if (log.address.toLowerCase() !== tokenConfig.address.toLowerCase()) continue;
+
       try {
         const decoded = decodeEventLog({
           abi: [TRANSFER_EVENT],
           data: log.data,
           topics: log.topics,
         });
+
         const dFrom = decoded.args.from as `0x${string}`;
         const dTo = decoded.args.to as `0x${string}`;
         const dValue = decoded.args.value as bigint;
 
+        if (dFrom.toLowerCase() !== from.toLowerCase()) continue;
+
         if (
-          dFrom.toLowerCase() === from.toLowerCase() &&
           dTo.toLowerCase() === to.toLowerCase() &&
           dValue === recipientAmount
         ) {
-          recipientMatched = true;
+          creatorMatched = true;
         }
 
-        // For 2% tips, also verify the fee transfer exists
         if (
-          effectiveFeeBps > 0 &&
-          fee > BigInt(0) &&
-          dFrom.toLowerCase() === from.toLowerCase() &&
-          dTo.toLowerCase() ===
-            (process.env.NEXT_PUBLIC_FEE_WALLET ?? "").toLowerCase() &&
+          dTo.toLowerCase() === expectedFeeWallet &&
           dValue === fee
         ) {
           feeMatched = true;
         }
+
+        if (creatorMatched && feeMatched) break;
       } catch {
         continue;
       }
     }
 
-    if (!recipientMatched || !feeMatched) {
+    if (!creatorMatched || !feeMatched) {
       return Response.json(
         {
           ok: false,
-          error: `tip verification failed: recipient=${recipientMatched}, fee=${feeMatched}`,
+          error: `transaction does not contain the complete ${selectedToken} tip split`,
+          creatorTransferVerified: creatorMatched,
+          feeTransferVerified: feeMatched,
         },
         { status: 400 }
       );
     }
 
-    // Idempotency — only after full verification
+    // Idempotency is recorded only after the transaction has been fully verified.
     const isNewTx = await redis.set(`tiphistory:seen:${txHash}`, "1", {
       nx: true,
       ex: 86400,
@@ -189,9 +177,15 @@ export async function POST(req: Request) {
       txHash,
       tokenSymbol: tokenSymbol ?? "USDC",
       timestamp,
-      feeBps: effectiveFeeBps,
     });
 
+    // Sorted set, scored by timestamp — newest-first pagination via zrange rev.
+    // txHash inside the JSON member keeps every entry unique.
+    //
+    // Leaderboard credit (USDC only, matching current scope) happens here
+    // because this is the only point with an onchain-verified amount —
+    // /api/record-tip fired before a real tx hash existed and is now
+    // deprecated to prevent double-crediting.
     const writes: Promise<unknown>[] = [
       redis.zadd("tips:history", { score: timestamp, member: record }),
     ];
@@ -206,6 +200,7 @@ export async function POST(req: Request) {
     return Response.json({ ok: true });
   } catch (err) {
     console.error("record-tip-history error:", err);
+    // Best-effort — never block or surface this to the tipper.
     return Response.json({ ok: false }, { status: 200 });
   }
 }
