@@ -13,6 +13,8 @@ import { splitTipAmount } from "@/lib/utils";
 import { encodeFunctionData } from "viem";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
+
+export const dynamic = "force-dynamic";
 async function initializeServer(server: Parameters<typeof createMcpHandler>[0] extends (server: infer S) => unknown ? S : never) {
   server.registerTool(
     "get_platform_info",
