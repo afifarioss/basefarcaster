@@ -63,7 +63,7 @@ export function VeniceAssistant() {
         ...nextMessages,
         {
           role: "assistant",
-          content: data.answer,
+          content: data.content,
         },
       ]);
     } catch (err) {
