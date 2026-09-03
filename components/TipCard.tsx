@@ -177,7 +177,7 @@ export function TipCard({
           capabilities: paymasterSupported
             ? {
                 paymasterService: {
-                  url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
+                  url: "/api/paymaster",
                 },
               }
             : {},
@@ -196,7 +196,7 @@ export function TipCard({
           capabilities: paymasterSupported
             ? {
                 paymasterService: {
-                  url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
+                  url: "/api/paymaster",
                 },
               }
             : {},
@@ -216,7 +216,7 @@ export function TipCard({
             ...(paymasterSupported
               ? {
                   paymasterService: {
-                    url: process.env.NEXT_PUBLIC_PAYMASTER_URL as string,
+                    url: "/api/paymaster",
                   },
                 }
               : {}),

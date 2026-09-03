@@ -33,7 +33,7 @@ export function Providers({ children }: { children: ReactNode }) {
           apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
           chain={base}
           config={{
-            paymaster: process.env.NEXT_PUBLIC_PAYMASTER_URL,
+            paymaster: "/api/paymaster",
             appearance: {
               mode: "dark",
               theme: "base",
