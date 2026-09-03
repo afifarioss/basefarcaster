@@ -14,11 +14,10 @@ import {
   USDC_DECIMALS,
   PLATFORM_FEE_BPS,
   PLATFORM_FEE_WALLET,
-  ZAP_TOKEN_ADDRESS,
-  ZAP_HOLDER_THRESHOLD,
   ERC20_ABI,
 } from "@/lib/constants";
 import { splitTipAmount } from "@/lib/utils";
+import { getZapFeeBps } from "@/lib/zap-eligibility";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL as string,
@@ -102,31 +101,12 @@ export async function POST(req: Request) {
     }
 
     // Determine the fee mode on the server. Never trust feeBps from the client.
-    // The sender must have held the required $ZAP balance at the tip's block
-    // to qualify for the 0% platform fee.
-    let isZapHolder = false;
-    try {
-      const zapBalance = await client.readContract({
-        address: ZAP_TOKEN_ADDRESS,
-        abi: ERC20_ABI,
-        functionName: "balanceOf",
-        args: [from as `0x${string}`],
-        blockNumber: receipt.blockNumber,
-      });
+    // Eligibility is checked at the actual tip receipt block.
+    const serverFeeBps = await getZapFeeBps(
+      from as `0x${string}`,
+      receipt.blockNumber,
+    );
 
-      const zapThreshold =
-        BigInt(ZAP_HOLDER_THRESHOLD) * BigInt(10) ** BigInt(18);
-
-      isZapHolder = zapBalance >= zapThreshold;
-    } catch (err) {
-      console.warn(
-        "record-tip-history: unable to verify $ZAP holder status",
-        from,
-        err
-      );
-    }
-
-    const serverFeeBps = isZapHolder ? 0 : PLATFORM_FEE_BPS;
 
     // If the client supplied a fee mode, require it to agree with the
     // server-derived mode. This catches stale or manipulated client state.
