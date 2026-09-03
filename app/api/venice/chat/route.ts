@@ -145,6 +145,13 @@ export async function POST(req: NextRequest) {
         `VENICE CHAT: API returned ${response.status}: ${errorText.slice(0, 500)}`
       );
 
+      if (response.status === 402) {
+        return Response.json(
+          { error: "Venice Assistant is temporarily unavailable because its API account needs more credits." },
+          { status: 402 }
+        );
+      }
+
       if (response.status === 429) {
         return Response.json(
           { error: "Venice API rate limit reached. Please try again shortly." },
