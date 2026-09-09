@@ -180,6 +180,7 @@ export async function GET(req: NextRequest) {
     const zaps = tips.map((t) => ({
       txHash: t.txHash,
       amountUsdc: t.amountUsdc,
+      tokenSymbol: t.tokenSymbol,
       timestamp: Math.floor(t.timestamp / 1000),
       from: {
         address: t.from,

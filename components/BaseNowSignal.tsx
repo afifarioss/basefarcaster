@@ -10,6 +10,7 @@ type Identity = {
 export type BaseNowSignalData = {
   txHash: string;
   amountUsdc: number;
+  tokenSymbol: string;
   timestamp: number;
   from: Identity;
   to: Identity;
@@ -99,7 +100,7 @@ export function BaseNowSignal({ signal }: BaseNowSignalProps) {
       <div className="mt-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-lg font-semibold text-white">
-            ${signal.amountUsdc.toFixed(2)} USDC
+            ${signal.amountUsdc.toFixed(2)} {signal.tokenSymbol}
           </p>
           <p className="mt-0.5 text-xs text-white/45">
             A Base user sent an onchain tip
