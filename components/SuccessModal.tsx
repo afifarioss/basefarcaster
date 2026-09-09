@@ -29,7 +29,7 @@ export function SuccessModal({
   async function handleCastZap() {
     try {
       await sdk.actions.composeCast({
-        text: `I just zapped ${recipientLabel} ${formatUsdc(amount)} ${tokenSymbol} on BaseZap ⚡\n\nTip good casts, not just like them.`,
+        text: `I just zapped ${recipientLabel} ${formatUsdc(amount)} ${tokenSymbol} on Base with BaseZap ⚡\n\nReal payment. Onchain.\n\nTip good casts, not just like them.`,
         embeds: [APP_URL],
       });
     } catch {
