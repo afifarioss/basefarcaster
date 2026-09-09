@@ -62,7 +62,7 @@ export function ProfileCard() {
           onClick={handleCopyLink}
           className="chip w-full !py-2.5 text-xs"
         >
-          {copied ? "Copied! Paste it in a cast ⚡" : "Get your tip link"}
+          {copied ? "Copied! Share it to get tipped ⚡" : "Get your personal tip link"}
         </button>
       )}
     </div>
