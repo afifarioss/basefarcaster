@@ -1,4 +1,5 @@
 import { base } from "wagmi/chains";
+import { Attribution } from "ox/erc8021";
 
 /**
  * BaseZap constants
@@ -149,8 +150,9 @@ export const APP_URL =
  *
  * Appended to supported Base transactions for builder attribution.
  */
-export const BASE_BUILDER_CODE_SUFFIX =
-  "0x62635f75706861636f34700b0080218021802180218021802180218021";
+export const BASE_BUILDER_CODE_SUFFIX = Attribution.toDataSuffix({
+  codes: ["bc_uphaco4p"],
+});
 
 /**
  * Minimal ERC-20 ABI.
