@@ -12,6 +12,7 @@ import {
   DIEM_DECIMALS,
   USDC_ADDRESS,
   USDC_DECIMALS,
+  VVV_ADDRESS,
   PLATFORM_FEE_BPS,
   PLATFORM_FEE_WALLET,
   ZAP_TOKEN_ADDRESS,
@@ -58,15 +59,14 @@ export async function POST(req: Request) {
 
     const selectedToken = tokenSymbol ?? "USDC";
 
-    // History verification supports USDC and optional DIEM.
-    // VVV remains outside this verification path for now.
     const tokenConfig =
       selectedToken === "USDC"
         ? { address: USDC_ADDRESS, decimals: USDC_DECIMALS }
-        : selectedToken === "DIEM"
-          ? { address: DIEM_ADDRESS, decimals: DIEM_DECIMALS }
-          : null;
-
+        : selectedToken === "VVV"
+          ? { address: VVV_ADDRESS, decimals: null }
+          : selectedToken === "DIEM"
+            ? { address: DIEM_ADDRESS, decimals: DIEM_DECIMALS }
+            : null;
     if (!tokenConfig) {
       return Response.json(
         { ok: false, error: "unsupported token for verification" },
@@ -142,9 +142,18 @@ export async function POST(req: Request) {
     }
 
     // Use the selected token's decimals for exact onchain verification.
+    const decimals =
+      tokenConfig.decimals ??
+      await client.readContract({
+        address: tokenConfig.address,
+        abi: ERC20_ABI,
+        functionName: "decimals",
+        blockNumber: receipt.blockNumber,
+      });
+
     const { fee, recipientAmount } = splitTipAmount(
       amountUsdc,
-      tokenConfig.decimals,
+      decimals,
       serverFeeBps
     );
 
