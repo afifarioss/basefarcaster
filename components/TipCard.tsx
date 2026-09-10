@@ -126,25 +126,37 @@ export function TipCard({
 
   useEffect(() => {
     if (
-      resolvedTxHash &&
-      address &&
-      !historyRecordedRef.current
+      callsStatus?.status !== "success" ||
+      !resolvedTxHash ||
+      !address ||
+      historyRecordedRef.current
     ) {
-      historyRecordedRef.current = true;
-      fetch("/api/record-tip-history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: address,
-          to: recipient,
-          amountUsdc: amount,
-          txHash: resolvedTxHash,
-          tokenSymbol,
-          feeBps: effectiveFeeBps,
-        }),
-      }).catch(() => {});
+      return;
     }
-  }, [resolvedTxHash, address, tokenSymbol, recipient, amount, effectiveFeeBps]);
+
+    historyRecordedRef.current = true;
+
+    void fetch("/api/record-tip-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: address,
+        to: recipient,
+        amountUsdc: amount,
+        txHash: resolvedTxHash,
+        tokenSymbol,
+        feeBps: effectiveFeeBps,
+      }),
+    });
+  }, [
+    callsStatus?.status,
+    resolvedTxHash,
+    address,
+    recipient,
+    amount,
+    tokenSymbol,
+    effectiveFeeBps,
+  ]);
 
   const { fee, recipientAmount } = useMemo(
     () => splitTipAmount(amount || 0, decimals, effectiveFeeBps),
