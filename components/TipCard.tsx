@@ -38,7 +38,7 @@ export function TipCard({
   const { connectors, connect } = useConnect();
   const { sendCalls, isPending } = useSendCalls();
   const [callsId, setCallsId] = useState<string | undefined>(undefined);
-  const historyRecordedRef = useRef(false);
+  const historyRecordedRef = useRef<string | null>(null);
   const { data: callsStatus } = useCallsStatus({
     id: callsId as string,
     query: {
@@ -129,12 +129,12 @@ export function TipCard({
       callsStatus?.status !== "success" ||
       !resolvedTxHash ||
       !address ||
-      historyRecordedRef.current
+      historyRecordedRef.current === resolvedTxHash
     ) {
       return;
     }
 
-    historyRecordedRef.current = true;
+    historyRecordedRef.current = resolvedTxHash;
 
     void fetch("/api/record-tip-history", {
       method: "POST",
