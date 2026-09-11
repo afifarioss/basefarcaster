@@ -8,10 +8,13 @@ const USDC_DECIMALS = 6;
 const CHAIN_ID = 8453;
 const PLATFORM_FEE_BPS = 200;
 const FEE_DENOMINATOR = 10000n;
-const FEE_WALLET = "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918";
+const FEE_WALLET =
+  process.env.NEXT_PUBLIC_FEE_WALLET ||
+  process.env.FEE_WALLET ||
+  "0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918";
 
 function parseUsdc(amount: number): bigint {
-  return BigInt(Math.round(amount * 10 ** USDC_DECIMALS));
+  return BigInt(amount.toFixed(USDC_DECIMALS).replace(".", ""));
 }
 
 function splitTipAmount(amountUsdc: number) {

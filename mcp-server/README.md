@@ -38,6 +38,14 @@ npm start
 
 This starts the server on stdio, ready for any MCP client to connect to.
 
+For the Streamable HTTP transport:
+
+```bash
+npm run start:http
+```
+
+The HTTP server listens on port `3001` by default. Set the `PORT` environment variable to use another port.
+
 ## Use with Claude Desktop / Claude Code
 
 Add to your MCP client config:
@@ -46,21 +54,25 @@ Add to your MCP client config:
 {
   "mcpServers": {
     "basefarcaster": {
-      "command": "node",
-      "args": ["/absolute/path/to/basefarcaster/mcp-server/src/index.js"],
-      "env": {
-        "FEE_WALLET": "0xYourFeeWalletHere"
-      }
+      "command": "npx",
+      "args": [
+        "tsx",
+        "/absolute/path/to/basefarcaster/mcp-server/index.stdio.ts"
+      ]
     }
   }
 }
 ```
 
-## Environment variables
+## Configuration
 
-| Variable | Default | What it's for |
-|---|---|---|
-| `FEE_WALLET` | placeholder burn address | The wallet `build_tip_calldata` routes the 2% platform fee to |
+The MCP server uses this platform fee wallet:
+
+`0x7845D45d9E53268EBFf3C4a9daBb994cE5b93918`
+
+The HTTP transport listens on port `3001` by default. Set the `PORT` environment variable to use another port.
+
+The fee wallet can be configured with `NEXT_PUBLIC_FEE_WALLET` or `FEE_WALLET`. `NEXT_PUBLIC_FEE_WALLET` takes precedence. If neither is set, the server falls back to the default wallet shown above.
 
 ## Example: quoting and building a tip
 
