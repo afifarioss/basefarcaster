@@ -105,6 +105,7 @@ function HomeContent() {
 
       <Hero
         recipientLabel={heroRecipientLabel}
+        hub
         onCtaClick={() =>
           tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
         }
