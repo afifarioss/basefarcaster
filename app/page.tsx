@@ -1,213 +1,223 @@
-"use client";
-
-import { Suspense, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { isAddress } from "viem";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { Hero } from "@/components/Hero";
-import { SocialProofSection } from "@/components/SocialProofSection";
-import { Testimonial } from "@/components/Testimonial";
-import { TipCard } from "@/components/TipCard";
-import { UsernameInput } from "@/components/UsernameInput";
-import { TrustChecklist } from "@/components/TrustChecklist";
-import { BetaStats } from "@/components/BetaStats";
-import { WalletConnect } from "@/components/WalletConnect";
-import { ProfileCard } from "@/components/ProfileCard";
-import { ShareButton } from "@/components/ShareButton";
-import { RecentZaps } from "@/components/RecentZaps";
-import { Leaderboard } from "@/components/Leaderboard";
-import { TipHistory } from "@/components/TipHistory";
-import { ZapWidget } from "@/components/ZapWidget";
-import { ZapSection } from "@/components/ZapSection";
-import { AgentExplanation } from "@/components/AgentExplanation";
-import { BuiltWith } from "@/components/BuiltWith";
-import { BaseAlignment } from "@/components/BaseAlignment";
 import { Footer } from "@/components/Footer";
-import { FirstVisitModal } from "@/components/FirstVisitModal";
-import {
-  APP_NAME,
-  DEFAULT_RECIPIENT_WALLET,
-  PLATFORM_FEE_BPS,
-} from "@/lib/constants";
-const STEPS = [
+
+const destinations = [
   {
-    title: "Pick an amount",
-    body: "Choose a preset or enter a custom amount.",
+    index: "01",
+    eyebrow: "DISCOVERY LAYER",
+    title: "BaseNow",
+    description:
+      "The discovery layer we are building for the Base economy — projects, launches, agents, people, and meaningful onchain activity.",
+    href: "/now",
+    action: "Explore BaseNow",
   },
   {
-    title: "Confirm in your wallet",
-    body: "Connect with Base Account or Farcaster Wallet.",
+    index: "02",
+    eyebrow: "ONCHAIN SUPPORT",
+    title: "Zaps",
+    description:
+      "Send onchain support directly on Base. Simple interactions, transparent settlement, and verifiable transactions.",
+    href: "/zap",
+    action: "Explore Zaps",
   },
   {
-    title: "It lands instantly",
-    body: "Funds settle onchain on Base in seconds, not days.",
+    index: "03",
+    eyebrow: "AI + X402",
+    title: "Agents",
+    description:
+      "Discover the emerging agent economy on Base — where AI services can become programmable, discoverable, and payable.",
+    href: "/agents",
+    action: "Explore Agents",
+  },
+  {
+    index: "04",
+    eyebrow: "BASEZAP UTILITY",
+    title: "$ZAP",
+    description:
+      "The BaseZap ecosystem token. Hold 100+ $ZAP today to unlock 0% platform fees on your tips.",
+    href: "/ecosystem",
+    action: "Explore $ZAP",
+  },
+  {
+    index: "05",
+    eyebrow: "AI ECOSYSTEM",
+    title: "Venice",
+    description:
+      "Explore the Venice connection — private AI, staking, credits, and the wider ecosystem around intelligent onchain applications.",
+    href: "/venice",
+    action: "Explore Venice",
   },
 ];
 
-function HomeContent() {
-  const { context } = useMiniKit();
-  const isNotificationLaunch = context?.location?.type === "notification";
-  const tipRef = useRef<HTMLDivElement>(null);
-  const searchParams = useSearchParams();
-
-  // Supports personalized tip links: basefarcaster.vercel.app/?to=0x...&label=alice.eth
-  // Lets anyone share a link that tips a specific creator directly, without
-  // needing a full cast-action integration.
-  const toParam = searchParams.get("to");
-  const labelParam = searchParams.get("label");
-  const recipient =
-    toParam && isAddress(toParam)
-      ? (toParam as `0x${string}`)
-      : DEFAULT_RECIPIENT_WALLET;
-  const recipientLabel = labelParam || "the creator";
-
-  // Overrides the URL-based recipient when someone resolves a
-  // @username via the input box. Falls back to the ?to= link
-  // (or default wallet) when nothing has been typed.
-  const [resolvedUser, setResolvedUser] = useState<{
-    address: `0x${string}`;
-    displayName: string;
-    username?: string;
-    pfpUrl?: string;
-    fid?: number;
-  } | null>(null);
-
-  const activeRecipient = resolvedUser?.address ?? recipient;
-  const activeLabel = resolvedUser?.displayName ?? recipientLabel;
-  // Only a real, resolved recipient — never the "the creator" fallback —
-  // is allowed to override the Hero headline.
-  const heroRecipientLabel = resolvedUser?.displayName ?? labelParam;
-
+function Arrow() {
   return (
-    <main className="relative min-h-screen bg-noise-grid">
-      <FirstVisitModal />
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.06] bg-surface-void/80 px-5 py-4 backdrop-blur-xl">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-base-blue border border-base-blue/60">
-            <span className="font-display text-sm font-bold text-white">Z</span>
-          </div>
-          <span className="font-display text-[15px] font-bold text-white">
-            {APP_NAME}
-          </span>
+    <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">
+      →
+    </span>
+  );
+}
+
+export default function Home() {
+  return (
+    <main className="min-h-screen overflow-hidden bg-noise-grid">
+      <header className="relative z-20 border-b border-white/[0.06] bg-surface-void/70 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
+          <a href="/" className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-base-blue/60 bg-base-blue shadow-lg shadow-base-blue/20">
+              <span className="font-display text-sm font-bold text-white">Z</span>
+            </span>
+            <span className="font-display text-[15px] font-bold tracking-tight text-white">
+              BaseZap
+            </span>
+          </a>
+
+          <a
+            href="/app"
+            className="rounded-lg border border-white/[0.10] bg-white/[0.035] px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 transition hover:border-base-blueLight/30 hover:bg-white/[0.06] hover:text-white"
+          >
+            Open App →
+          </a>
         </div>
-        <WalletConnect />
       </header>
 
-      {isNotificationLaunch && (
-        <div className="px-5 pt-2">
-          <div className="mx-auto max-w-md">
-            <p className="mb-3 text-center text-sm font-medium text-white/80">
-              Welcome back — thanks for using BaseZap ⚡
+      <section className="relative px-5 pb-24 pt-24 sm:px-8 sm:pb-32 sm:pt-32">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[620px] bg-[radial-gradient(circle_at_50%_0%,rgba(0,82,255,0.20),transparent_62%)]" />
+        <div className="pointer-events-none absolute left-1/2 top-24 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-base-blue/10 blur-[120px]" />
+
+        <div className="relative mx-auto max-w-6xl">
+          <div className="max-w-4xl">
+            <p className="animate-fade-up text-[10px] font-semibold uppercase tracking-[0.24em] text-base-blueLight/80">
+              BaseZap · Base Mainnet
             </p>
-            <ProfileCard />
+
+            <h1 className="mt-6 max-w-4xl font-display text-[3.5rem] font-bold leading-[0.91] tracking-[-0.055em] text-white sm:text-7xl lg:text-[6.8rem]">
+              The interaction
+              <br />
+              layer for{" "}
+              <span className="bg-gradient-to-r from-base-blueLight via-white to-white/45 bg-clip-text text-transparent">
+                Base.
+              </span>
+            </h1>
+
+            <p className="mt-8 max-w-2xl text-base leading-7 text-white/45 sm:text-lg">
+              Discover what is happening. Support people. Pay agents.
+              Explore the Base economy through one simple entry point.
+            </p>
+
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <a
+                href="/now"
+                className="btn-primary inline-flex items-center justify-center gap-2 !py-3.5 px-6 text-sm"
+              >
+                Explore BaseNow <Arrow />
+              </a>
+              <a
+                href="/app"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.025] px-6 py-3.5 text-sm font-semibold text-white/75 transition hover:border-white/[0.18] hover:bg-white/[0.05] hover:text-white"
+              >
+                Open BaseZap App <Arrow />
+              </a>
+            </div>
           </div>
-        </div>
-      )}
 
-      <Hero
-        recipientLabel={heroRecipientLabel}
-        onCtaClick={() =>
-          tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-        }
-      />
-
-      <SocialProofSection />
-      <Testimonial />
-
-      <section className="px-5">
-        <div className="mx-auto flex max-w-md flex-col items-center gap-5">
-          <BetaStats />
-          {!isNotificationLaunch && <ProfileCard />}
-
-          <div ref={tipRef} className="w-full space-y-3">
-            <UsernameInput
-              onResolve={(user) =>
-                setResolvedUser(
-                  user ? { address: user.address, displayName: `@${user.username}`, username: user.username, pfpUrl: user.pfpUrl, fid: user.fid } : null
-                )
-              }
-            />
-            <TipCard recipient={activeRecipient} recipientLabel={activeLabel} recipientFid={resolvedUser?.fid} recipientAddress={resolvedUser?.address ?? recipient} recipientPfpUrl={resolvedUser?.pfpUrl} recipientUsername={resolvedUser?.username} />
-          </div>
-
-          <TrustChecklist />
-            <RecentZaps onCtaClick={() => tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })} />
-          <Leaderboard />
-          <TipHistory />
-          <ShareButton className="btn-secondary w-full max-w-md" />
-          <ZapSection />
-          <ZapWidget />
-          <AgentExplanation />
-          <div className="w-full max-w-md space-y-2">
-            <a
-              href="/stake"
-              className="chip block w-full !py-2.5 text-center text-xs text-white/50"
-            >
-              Stake VVV with Venice →
-            </a>
-
-            <a
-              href="/venice"
-              className="chip block w-full !py-2.5 text-center text-xs text-white/50"
-            >
-              Explore the Venice ecosystem →
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section id="how-it-works" className="mt-16 px-5">
-        <div className="mx-auto max-w-md">
-          <h2 className="text-center font-display text-2xl font-bold text-white">
-            How it works
-          </h2>
-          <div className="mt-7 space-y-4">
-            {STEPS.map((step, i) => (
-              <div key={step.title} className="glass-card flex gap-4 p-4">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-base-blue/12 font-display text-sm font-bold text-base-blueLight">
-                  {i + 1}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    {step.title}
-                  </p>
-                  <p className="mt-0.5 text-sm text-white/45">{step.body}</p>
-                </div>
+          <div className="mt-20 grid gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.08] sm:grid-cols-3">
+            {[
+              ["01", "DISCOVER", "Signals become places to explore."],
+              ["02", "UNDERSTAND", "Follow the people, projects, and agents behind them."],
+              ["03", "ACT", "Move from information to an onchain action."],
+            ].map(([number, label, text]) => (
+              <div key={number} className="bg-[#05070b]/95 px-5 py-6 sm:px-6">
+                <p className="font-mono text-[10px] text-base-blueLight/60">
+                  {number}
+                </p>
+                <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
+                  {label}
+                </p>
+                <p className="mt-2 max-w-xs text-sm leading-6 text-white/60">
+                  {text}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mt-14 px-5">
-        <div className="mx-auto grid max-w-md grid-cols-3 gap-3 text-center">
-          {[
-            { label: "Settlement", value: "~2s" },
-            { label: "Network fee", value: "<$0.01" },
-            { label: "Platform fee", value: `${PLATFORM_FEE_BPS / 100}%` },
-          ].map((stat) => (
-            <div key={stat.label} className="glass-card px-3 py-5">
-              <p className="font-display text-xl font-bold text-white">
-                {stat.value}
+      <section className="border-y border-white/[0.06] px-5 py-20 sm:px-8 sm:py-28">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-col justify-between gap-8 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-base-blueLight/70">
+                Explore the network
               </p>
-              <p className="mt-1 text-[11px] text-white/40">{stat.label}</p>
+              <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold tracking-[-0.035em] text-white sm:text-5xl">
+                One hub. Multiple ways to enter Base.
+              </h2>
             </div>
-          ))}
+            <p className="max-w-sm text-sm leading-6 text-white/35">
+              Each destination goes deeper into a specific part of the
+              BaseZap ecosystem.
+            </p>
+          </div>
+
+          <div className="mt-12 divide-y divide-white/[0.07] border-y border-white/[0.07]">
+            {destinations.map((destination) => (
+              <a
+                key={destination.index}
+                href={destination.href}
+                className="group grid gap-5 py-7 transition hover:bg-white/[0.015] sm:grid-cols-[70px_190px_1fr_auto] sm:items-center sm:gap-7"
+              >
+                <span className="font-mono text-[10px] text-white/20">
+                  {destination.index}
+                </span>
+
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-base-blueLight/65">
+                    {destination.eyebrow}
+                  </p>
+                  <h3 className="mt-1 font-display text-xl font-bold tracking-tight text-white">
+                    {destination.title}
+                  </h3>
+                </div>
+
+                <p className="max-w-xl text-sm leading-6 text-white/40">
+                  {destination.description}
+                </p>
+
+                <span className="inline-flex items-center gap-2 whitespace-nowrap text-xs font-semibold text-white/45 transition group-hover:text-white">
+                  {destination.action} <Arrow />
+                </span>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
-      <BaseAlignment />
-      <BuiltWith />
+      <section className="relative px-5 py-24 sm:px-8 sm:py-32">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_50%_100%,rgba(0,82,255,0.14),transparent_65%)]" />
+
+        <div className="relative mx-auto max-w-4xl text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-base-blueLight/70">
+            Enter BaseZap
+          </p>
+          <h2 className="mt-4 font-display text-4xl font-bold tracking-[-0.045em] text-white sm:text-6xl">
+            Discover first.
+            <br />
+            Then act.
+          </h2>
+          <p className="mx-auto mt-5 max-w-lg text-sm leading-6 text-white/40 sm:text-base">
+            Explore the Base economy, find a signal worth following, and
+            move into the application when you are ready.
+          </p>
+
+          <a
+            href="/app"
+            className="btn-primary mt-8 inline-flex items-center gap-2 !py-3.5 px-7 text-sm"
+          >
+            Launch BaseZap <Arrow />
+          </a>
+        </div>
+      </section>
+
       <Footer />
     </main>
-  );
-}
-
-export default function Home() {
-  // useSearchParams requires a Suspense boundary for static rendering.
-  return (
-    <Suspense fallback={null}>
-      <HomeContent />
-    </Suspense>
   );
 }
