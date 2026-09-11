@@ -10,8 +10,8 @@ import {
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { Redis } from "@upstash/redis";
 
-
 export const dynamic = "force-dynamic";
+
 const redis = new Redis({
   url: process.env.KV_REST_API_URL as string,
   token: process.env.KV_REST_API_TOKEN as string,
@@ -30,9 +30,12 @@ const RATE_WINDOW_SECONDS = 60;
  * Note: this counts tips and supporters. It does NOT reliably count unique
  * creators, because the fee transfer alone only tells us the sender and fee
  * wallet, not the creator recipient.
+ *
+ * Caching: `dynamic = "force-dynamic"` disables Next's Data Cache for this
+ * route, so a `revalidate` export would silently do nothing here. The scan
+ * below is expensive (chunked eth_getLogs over a 24h window), so it's
+ * cached explicitly in Redis instead.
  */
-
-export const revalidate = 30;
 
 const client = createPublicClient({
   chain: base,
@@ -42,6 +45,16 @@ const client = createPublicClient({
 // Base produces a block roughly every 2 seconds, so ~43,200 blocks ≈ 24h.
 const LOOKBACK_BLOCKS = BigInt(43_200);
 const WINDOW_HOURS = 24;
+
+const CACHE_KEY = "stats:pulse:v1";
+const CACHE_TTL_SECONDS = 30;
+
+type StatsPayload = {
+  tipCount: number;
+  totalVolumeUsdc: number;
+  supporterCount: number;
+  windowHours: number;
+};
 
 export async function GET(req: Request) {
   const ip = getClientIp(req);
@@ -56,6 +69,16 @@ export async function GET(req: Request) {
       { error: "Too many requests, please slow down." },
       { status: 429, headers: { "Retry-After": String(resetSeconds) } }
     );
+  }
+
+  try {
+    const cached = await redis.get<string>(CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached) as StatsPayload;
+      return Response.json(parsed);
+    }
+  } catch {
+    // Cache read failure falls through to a live scan below.
   }
 
   try {
@@ -99,9 +122,7 @@ export async function GET(req: Request) {
     const tipCount = logs.length;
 
     const supporters = new Set(
-      logs
-        .map((log) => log.args.from?.toLowerCase())
-        .filter(Boolean)
+      logs.map((log) => log.args.from?.toLowerCase()).filter(Boolean)
     );
 
     const totalFeeUnits = logs.reduce(
@@ -110,15 +131,24 @@ export async function GET(req: Request) {
     );
 
     const totalVolumeUnits =
-      (totalFeeUnits * BigInt(FEE_DENOMINATOR)) /
-      BigInt(PLATFORM_FEE_BPS);
+      (totalFeeUnits * BigInt(FEE_DENOMINATOR)) / BigInt(PLATFORM_FEE_BPS);
 
-    return Response.json({
+    const payload: StatsPayload = {
       tipCount,
       totalVolumeUsdc: Number(formatUnits(totalVolumeUnits, USDC_DECIMALS)),
       supporterCount: supporters.size,
       windowHours: WINDOW_HOURS,
-    });
+    };
+
+    try {
+      await redis.set(CACHE_KEY, JSON.stringify(payload), {
+        ex: CACHE_TTL_SECONDS,
+      });
+    } catch {
+      // Non-fatal: response still returns correct data, just uncached.
+    }
+
+    return Response.json(payload);
   } catch (err) {
     console.error("Stats API error:", err);
 
