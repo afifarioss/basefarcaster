@@ -206,6 +206,8 @@ export async function GET(req: NextRequest) {
       importance: s.importance,
       signalLabel: s.label,
       context: s.context,
+      confidence: s.confidence,
+      facts: s.facts,
       from: s.from,
       to: s.to,
     }));

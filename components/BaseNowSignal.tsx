@@ -7,6 +7,12 @@ type Identity = {
   pfpUrl?: string;
 };
 
+type SignalFact = {
+  label: string;
+  value: string;
+  verified: boolean;
+};
+
 export type BaseNowSignalData = {
   txHash: string;
   amountUsdc: number;
@@ -18,6 +24,8 @@ export type BaseNowSignalData = {
   context: string;
   from: Identity;
   to: Identity;
+  confidence?: "verified" | "derived";
+  facts?: SignalFact[];
 };
 
 type BaseNowSignalProps = {
@@ -113,6 +121,9 @@ function getSignalIcon(signalType: BaseNowSignalData["signalType"]) {
 export function BaseNowSignal({
   signal,
 }: BaseNowSignalProps) {
+  const confidenceLabel =
+    signal.confidence === "derived" ? "Derived" : "Verified";
+
   return (
     <article className="glass-card overflow-hidden transition hover:border-white/15">
       <div className="p-4 sm:p-5">
@@ -133,7 +144,7 @@ export function BaseNowSignal({
                 </span>
 
                 <span className="rounded-full border border-white/[0.06] bg-white/[0.025] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.14em] text-white/30">
-                  Verified
+                  {confidenceLabel}
                 </span>
               </div>
 
@@ -193,6 +204,36 @@ export function BaseNowSignal({
               {signal.context}
             </p>
           </div>
+
+          {signal.facts && signal.facts.length > 0 ? (
+            <div className="mt-4 border-t border-white/[0.06] pt-3">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/25">
+                Evidence
+              </p>
+
+              <div className="mt-2 space-y-1.5">
+                {signal.facts.map((fact) => (
+                  <div
+                    key={`${fact.label}-${fact.value}`}
+                    className="flex items-start justify-between gap-3 text-[10px]"
+                  >
+                    <span className="text-white/30">
+                      {fact.label}
+                    </span>
+
+                    <span className="flex max-w-[70%] min-w-0 items-center justify-end gap-1.5 text-right">
+                      <span className="truncate text-white/50">
+                        {fact.value}
+                      </span>
+                      <span className="shrink-0 text-[8px] uppercase tracking-[0.12em] text-white/20">
+                        {fact.verified ? "Verified" : "Derived"}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3">

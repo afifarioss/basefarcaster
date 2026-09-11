@@ -105,7 +105,10 @@ function classify(
   return { type, importance, label, context };
 }
 
-function toIdentity(address: string, resolved?: ResolvedIdentity): SignalIdentity {
+function toIdentity(
+  address: string,
+  resolved?: ResolvedIdentity
+): SignalIdentity {
   return { address, ...resolved };
 }
 
@@ -117,11 +120,54 @@ export function toBaseSignal(
   const fromLower = record.from.toLowerCase();
   const toLower = record.to.toLowerCase();
 
+  const senderTipCount = freq.senderCounts.get(fromLower) ?? 1;
+  const recipientSupporterCount =
+    freq.recipientSupporters.get(toLower)?.size ?? 1;
+
   const classification = classify(record.amountUsdc, {
-    senderTipCount: freq.senderCounts.get(fromLower) ?? 1,
-    recipientSupporterCount: freq.recipientSupporters.get(toLower)?.size ?? 1,
+    senderTipCount,
+    recipientSupporterCount,
     isCompleteHistory: freq.isCompleteHistory,
   });
+
+  const facts: BaseSignal["facts"] = [
+    {
+      label: "Network",
+      value: "Base",
+      verified: true,
+    },
+    {
+      label: "Source",
+      value: "BaseZap",
+      verified: true,
+    },
+    {
+      label: "Amount",
+      value: `${record.amountUsdc} ${record.tokenSymbol}`,
+      verified: true,
+    },
+    {
+      label: "Transaction",
+      value: record.txHash,
+      verified: true,
+    },
+  ];
+
+  if (senderTipCount > 1) {
+    facts.push({
+      label: "Sender activity",
+      value: `${senderTipCount} recorded tips in the available history`,
+      verified: false,
+    });
+  }
+
+  if (recipientSupporterCount >= 3) {
+    facts.push({
+      label: "Recent supporters",
+      value: `${recipientSupporterCount} different supporters`,
+      verified: false,
+    });
+  }
 
   return {
     id: record.txHash,
@@ -129,6 +175,7 @@ export function toBaseSignal(
     sourceType: "tip",
     network: "base",
     verified: true,
+    confidence: "derived",
 
     timestamp: Math.floor(record.timestamp / 1000),
 
@@ -136,6 +183,7 @@ export function toBaseSignal(
     importance: classification.importance,
     label: classification.label,
     context: classification.context,
+    facts,
 
     from: toIdentity(record.from, identities.get(fromLower)),
     to: toIdentity(record.to, identities.get(toLower)),
