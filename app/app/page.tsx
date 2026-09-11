@@ -5,8 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { isAddress } from "viem";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { Hero } from "@/components/Hero";
-import { SocialProofSection } from "@/components/SocialProofSection";
-import { Testimonial } from "@/components/Testimonial";
 import { TipCard } from "@/components/TipCard";
 import { UsernameInput } from "@/components/UsernameInput";
 import { TrustChecklist } from "@/components/TrustChecklist";
@@ -111,8 +109,6 @@ function HomeContent() {
         }
       />
 
-      <SocialProofSection />
-      <Testimonial />
 
       <section className="px-5">
         <div className="mx-auto flex max-w-md flex-col items-center gap-5">
