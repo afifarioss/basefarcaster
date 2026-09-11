@@ -15,50 +15,113 @@ type ResolvedIdentity = {
   pfpUrl: string;
 };
 
-function classify(amountUsdc: number): {
+export type FrequencySnapshot = {
+  isCompleteHistory: boolean;
+  senderCounts: Map<string, number>;
+  recipientSupporters: Map<string, Set<string>>;
+};
+
+export function buildFrequencySnapshot(
+  windowRecords: BaseZapTipRecord[],
+  totalRecorded: number
+): FrequencySnapshot {
+  const senderCounts = new Map<string, number>();
+  const recipientSupporters = new Map<string, Set<string>>();
+
+  for (const record of windowRecords) {
+    const from = record.from.toLowerCase();
+    const to = record.to.toLowerCase();
+
+    senderCounts.set(from, (senderCounts.get(from) ?? 0) + 1);
+
+    const supporters = recipientSupporters.get(to) ?? new Set<string>();
+    supporters.add(from);
+    recipientSupporters.set(to, supporters);
+  }
+
+  return {
+    isCompleteHistory: windowRecords.length >= totalRecorded,
+    senderCounts,
+    recipientSupporters,
+  };
+}
+
+function classify(
+  amountUsdc: number,
+  freq: {
+    senderTipCount: number;
+    recipientSupporterCount: number;
+    isCompleteHistory: boolean;
+  }
+): {
   type: string;
   importance: BaseSignal["importance"];
   label: string;
   context: string;
 } {
+  let type: string;
+  let importance: BaseSignal["importance"];
+  let label: string;
+  let context: string;
+
   if (amountUsdc >= 5) {
-    return {
-      type: "large_transfer",
-      importance: "high",
-      label: "High-value signal",
-      context: "A larger BaseZap tip was sent onchain.",
-    };
+    type = "large_transfer";
+    importance = "high";
+    label = "High-value signal";
+    context = "A larger BaseZap tip was sent onchain.";
+  } else if (amountUsdc >= 1) {
+    type = "support";
+    importance = "medium";
+    label = "Support signal";
+    context = "A meaningful onchain tip was sent to support another user.";
+  } else {
+    type = "tip";
+    importance = "low";
+    label = "Tip signal";
+    context = "A Base user sent an onchain tip.";
   }
 
-  if (amountUsdc >= 1) {
-    return {
-      type: "support",
-      importance: "medium",
-      label: "Support signal",
-      context: "A meaningful onchain tip was sent to support another user.",
-    };
+  const notes: string[] = [];
+
+  if (freq.senderTipCount > 1) {
+    notes.push(`This sender has sent ${freq.senderTipCount} verified tips.`);
+  } else if (freq.senderTipCount === 1 && freq.isCompleteHistory) {
+    notes.push("This is the sender's first recorded BaseZap tip.");
   }
 
-  return {
-    type: "tip",
-    importance: "low",
-    label: "Tip signal",
-    context: "A Base user sent an onchain tip.",
-  };
+  if (freq.recipientSupporterCount >= 3) {
+    notes.push(
+      `${freq.recipientSupporterCount} different supporters have tipped this recipient recently.`
+    );
+
+    if (importance === "low") importance = "medium";
+    else if (importance === "medium") importance = "high";
+  }
+
+  if (notes.length > 0) {
+    context = `${context} ${notes.join(" ")}`;
+  }
+
+  return { type, importance, label, context };
 }
 
-function toIdentity(
-  address: string,
-  resolved?: ResolvedIdentity
-): SignalIdentity {
+function toIdentity(address: string, resolved?: ResolvedIdentity): SignalIdentity {
   return { address, ...resolved };
 }
 
 export function toBaseSignal(
   record: BaseZapTipRecord,
-  identities: Map<string, ResolvedIdentity>
+  identities: Map<string, ResolvedIdentity>,
+  freq: FrequencySnapshot
 ): BaseSignal {
-  const classification = classify(record.amountUsdc);
+  const fromLower = record.from.toLowerCase();
+  const toLower = record.to.toLowerCase();
+
+  const classification = classify(record.amountUsdc, {
+    senderTipCount: freq.senderCounts.get(fromLower) ?? 1,
+    recipientSupporterCount: freq.recipientSupporters.get(toLower)?.size ?? 1,
+    isCompleteHistory: freq.isCompleteHistory,
+  });
 
   return {
     id: record.txHash,
@@ -74,8 +137,8 @@ export function toBaseSignal(
     label: classification.label,
     context: classification.context,
 
-    from: toIdentity(record.from, identities.get(record.from.toLowerCase())),
-    to: toIdentity(record.to, identities.get(record.to.toLowerCase())),
+    from: toIdentity(record.from, identities.get(fromLower)),
+    to: toIdentity(record.to, identities.get(toLower)),
 
     amount: {
       value: record.amountUsdc,

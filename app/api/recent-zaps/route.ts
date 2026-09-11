@@ -3,7 +3,11 @@ export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { Redis } from "@upstash/redis";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { toBaseSignal, type BaseZapTipRecord } from "@/lib/signals/basezap-source";
+import {
+  buildFrequencySnapshot,
+  toBaseSignal,
+  type BaseZapTipRecord,
+} from "@/lib/signals/basezap-source";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL as string,
@@ -13,6 +17,7 @@ const redis = new Redis({
 export const revalidate = 30;
 
 const MAX_ZAPS = 12;
+const FREQUENCY_WINDOW = 300;
 const RATE_LIMIT = 20;
 const RATE_WINDOW_SECONDS = 60;
 
@@ -74,16 +79,26 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const rawMembers = await redis.zrange("tips:history", 0, MAX_ZAPS - 1, {
-      rev: true,
-    });
+    const [totalRecorded, rawMembers] = await Promise.all([
+      redis.zcard("tips:history"),
+      redis.zrange("tips:history", 0, FREQUENCY_WINDOW - 1, { rev: true }),
+    ]);
 
-    const tips: BaseZapTipRecord[] = (rawMembers as unknown[])
+    const windowRecords: BaseZapTipRecord[] = (rawMembers as unknown[])
       .map(parseTipRecord)
       .filter((t): t is BaseZapTipRecord => t !== null);
 
+    const displayRecords = windowRecords.slice(0, MAX_ZAPS);
+
+    const freq = buildFrequencySnapshot(
+      windowRecords,
+      (totalRecorded as number) ?? windowRecords.length
+    );
+
     const addresses = Array.from(
-      new Set(tips.flatMap((t) => [t.from.toLowerCase(), t.to.toLowerCase()]))
+      new Set(
+        displayRecords.flatMap((t) => [t.from.toLowerCase(), t.to.toLowerCase()])
+      )
     );
 
     const identities = new Map<
@@ -180,7 +195,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const signals = tips.map((t) => toBaseSignal(t, identities));
+    const signals = displayRecords.map((t) => toBaseSignal(t, identities, freq));
 
     const zaps = signals.map((s) => ({
       txHash: s.transaction!.hash,
