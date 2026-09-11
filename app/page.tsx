@@ -256,6 +256,178 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="border-y border-white/[0.06] bg-[#07090d] px-5 py-20 sm:px-8 sm:py-28">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-base-blueLight/70">
+              Community signal
+            </p>
+            <h2 className="mt-3 font-display text-3xl font-bold tracking-[-0.035em] text-white sm:text-5xl">
+              What people are saying
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/40">
+              Real feedback from builders and early users around the BaseZap
+              experience.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-4 lg:grid-cols-3">
+            {[
+              {
+                quote:
+                  "BaseZap is the kind of friction kill that grows TVL organically. No bridge, no wallet hunt, just paste and send.",
+                handle: "@a0xbot",
+                label: "Farcaster / Base builder",
+                href: "https://farcaster.xyz/a0xbot/0xdd3ccc42",
+              },
+              {
+                quote:
+                  "$ZAP giving 0% fees to holders is clever — it actually makes the token useful, not just speculative. Real utility, real reason to hold.",
+                handle: "@afifarioss",
+                label: "BaseZap founder",
+                href: "https://warpcast.com/afifarioss",
+              },
+              {
+                quote:
+                  "Agent-native payments on Base is the missing layer. BaseZap's x402 endpoints let any agent tip any Farcaster user without a single manual step.",
+                handle: "Community feedback",
+                label: "Early access tester",
+                href: "/docs/agents",
+              },
+            ].map((testimonial) => (
+              <a
+                key={testimonial.handle}
+                href={testimonial.href}
+                target={testimonial.href.startsWith("http") ? "_blank" : undefined}
+                rel={
+                  testimonial.href.startsWith("http")
+                    ? "noopener noreferrer"
+                    : undefined
+                }
+                className="group flex h-full flex-col justify-between rounded-2xl border border-white/[0.08] bg-white/[0.025] p-6 transition duration-300 hover:border-base-blueLight/20 hover:bg-white/[0.045]"
+              >
+                <blockquote className="text-sm leading-7 text-white/65">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </blockquote>
+                <div className="mt-8">
+                  <p className="text-xs font-semibold text-white/60">
+                    {testimonial.handle}
+                  </p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-white/25">
+                    {testimonial.label}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative px-5 py-20 sm:px-8 sm:py-28">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_50%_0%,rgba(47,107,255,0.10),transparent_65%)]" />
+
+        <div className="relative mx-auto max-w-6xl">
+          <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+            <div className="max-w-2xl">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-base-blueLight/70">
+                Built for the Base direction
+              </p>
+              <h2 className="mt-3 font-display text-3xl font-bold tracking-[-0.035em] text-white sm:text-5xl">
+                The infrastructure is moving toward agents.
+              </h2>
+              <p className="mt-5 max-w-xl text-sm leading-7 text-white/40 sm:text-base">
+                Base and Coinbase are building around programmable payments,
+                agent tooling, MCP, x402 and software that can actually
+                transact. BaseZap is already building at that intersection.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 lg:max-w-sm lg:justify-end">
+              {[
+                "Payments",
+                "x402",
+                "MCP",
+                "ERC-8021",
+                "Agent tools",
+                "Base",
+              ].map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.08] md:grid-cols-2">
+            <article className="bg-[#05070b]/95 p-6 sm:p-8">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-base-blueLight/70">
+                  Jesse Pollak · Base
+                </p>
+                <span className="font-mono text-[9px] text-white/20">
+                  BASE 2026
+                </span>
+              </div>
+
+              <h3 className="mt-6 font-display text-2xl font-bold tracking-tight text-white">
+                Agents need rails, tools, and a way to transact.
+              </h3>
+
+              <p className="mt-4 text-sm leading-7 text-white/45">
+                Base&apos;s 2026 strategy puts agent-native accounts, CLI and
+                MCP access, x402, and builder attribution such as ERC-8021
+                directly in the infrastructure roadmap.
+              </p>
+
+              <p className="mt-6 border-l border-base-blueLight/30 pl-4 text-xs leading-6 text-white/30">
+                Base direction, not a BaseZap endorsement.
+              </p>
+            </article>
+
+            <article className="bg-[#05070b]/95 p-6 sm:p-8">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-base-blueLight/70">
+                  Brian Armstrong · Coinbase
+                </p>
+                <span className="font-mono text-[9px] text-white/20">
+                  COINBASE 2026
+                </span>
+              </div>
+
+              <h3 className="mt-6 font-display text-2xl font-bold tracking-tight text-white">
+                Agents are becoming economic actors.
+              </h3>
+
+              <p className="mt-4 text-sm leading-7 text-white/45">
+                Coinbase&apos;s current agent stack connects AI agents to
+                trading, payments and financial workflows through MCP and CLI,
+                with controls around what an agent can do.
+              </p>
+
+              <p className="mt-6 border-l border-base-blueLight/30 pl-4 text-xs leading-6 text-white/30">
+                Coinbase direction, not a Coinbase endorsement of BaseZap.
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-8 rounded-2xl border border-base-blueLight/15 bg-base-blue/5 p-6 text-center sm:p-8">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-base-blueLight/70">
+              Where BaseZap fits
+            </p>
+            <p className="mx-auto mt-3 max-w-2xl font-display text-xl font-bold tracking-tight text-white sm:text-2xl">
+              Discover the signal. Connect the agent. Move the value.
+            </p>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-white/35">
+              A discovery and interaction layer connecting people, payments,
+              agents and onchain activity on Base.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="relative px-5 py-24 sm:px-8 sm:py-32">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_50%_100%,rgba(47,107,255,0.14),transparent_65%)]" />
 
