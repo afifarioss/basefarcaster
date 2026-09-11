@@ -74,16 +74,14 @@ export async function GET(req: Request) {
   try {
     const cached = await redis.get<string>(CACHE_KEY);
     if (cached) {
-      console.log("stats-cache: HIT");
       const parsed =
         typeof cached === "string"
           ? (JSON.parse(cached) as StatsPayload)
           : (cached as unknown as StatsPayload);
       return Response.json(parsed);
     }
-    console.log("stats-cache: MISS (no value)");
-  } catch (cacheErr) {
-    console.error("stats-cache: READ ERROR", cacheErr);
+  } catch {
+    // Cache read failure falls through to a live scan below.
   }
 
   try {
