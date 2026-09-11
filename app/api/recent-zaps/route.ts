@@ -25,6 +25,42 @@ type TipRecord = {
   timestamp: number;
 };
 
+type SignalType = "tip" | "support" | "large_transfer";
+
+type SignalImportance = "low" | "medium" | "high";
+
+function classifySignal(amountUsdc: number): {
+  type: SignalType;
+  importance: SignalImportance;
+  label: string;
+  context: string;
+} {
+  if (amountUsdc >= 5) {
+    return {
+      type: "large_transfer",
+      importance: "high",
+      label: "High-value signal",
+      context: "A larger BaseZap tip was sent onchain.",
+    };
+  }
+
+  if (amountUsdc >= 1) {
+    return {
+      type: "support",
+      importance: "medium",
+      label: "Support signal",
+      context: "A meaningful onchain tip was sent to support another user.",
+    };
+  }
+
+  return {
+    type: "tip",
+    importance: "low",
+    label: "Tip signal",
+    context: "A Base user sent an onchain tip.",
+  };
+}
+
 function parseTipRecord(value: unknown): TipRecord | null {
   let parsed: unknown = value;
 
@@ -62,21 +98,33 @@ function parseTipRecord(value: unknown): TipRecord | null {
     return null;
   }
 
-  return { from, to, amountUsdc, txHash, tokenSymbol, timestamp };
+  return {
+    from,
+    to,
+    amountUsdc,
+    txHash,
+    tokenSymbol,
+    timestamp,
+  };
 }
 
 export async function GET(req: NextRequest) {
   const ip = getClientIp(req);
+
   const { allowed, resetSeconds } = await checkRateLimit(
     redis,
     `recent-zaps:${ip}`,
     RATE_LIMIT,
     RATE_WINDOW_SECONDS
   );
+
   if (!allowed) {
     return Response.json(
       { error: "Too many requests, please slow down." },
-      { status: 429, headers: { "Retry-After": String(resetSeconds) } }
+      {
+        status: 429,
+        headers: { "Retry-After": String(resetSeconds) },
+      }
     );
   }
 
@@ -90,36 +138,51 @@ export async function GET(req: NextRequest) {
       .filter((t): t is TipRecord => t !== null);
 
     const addresses = Array.from(
-      new Set(tips.flatMap((t) => [t.from.toLowerCase(), t.to.toLowerCase()]))
+      new Set(
+        tips.flatMap((t) => [
+          t.from.toLowerCase(),
+          t.to.toLowerCase(),
+        ])
+      )
     );
 
     const identities = new Map<
       string,
-      { username: string; displayName: string; pfpUrl: string }
+      {
+        username: string;
+        displayName: string;
+        pfpUrl: string;
+      }
     >();
 
     const apiKey = process.env.NEYNAR_API_KEY;
 
     if (apiKey && addresses.length > 0) {
-      // Check Redis cache first
       const uncached: string[] = [];
+
       for (const addr of addresses) {
         const cacheKey = `neynar:addr:${addr}`;
+
         try {
           const cached = await redis.get<string>(cacheKey);
+
           if (cached === "__NO_USER__") continue;
+
           if (cached) {
             const parsed = JSON.parse(cached);
+
             if (parsed && parsed.username) {
               identities.set(addr, {
                 username: parsed.username,
                 displayName: parsed.displayName ?? parsed.username,
                 pfpUrl: parsed.pfpUrl ?? "",
               });
+
               continue;
             }
           }
         } catch {}
+
         uncached.push(addr);
       }
 
@@ -128,48 +191,63 @@ export async function GET(req: NextRequest) {
           const url = new URL(
             "https://api.neynar.com/v2/farcaster/user/bulk-by-address"
           );
+
           url.searchParams.set("addresses", uncached.join(","));
 
           const res = await fetch(url, {
-            headers: { accept: "application/json", "x-api-key": apiKey },
+            headers: {
+              accept: "application/json",
+              "x-api-key": apiKey,
+            },
             next: { revalidate: 60 },
           });
 
           if (res.ok) {
             const data = (await res.json()) as Record<string, unknown>;
+
             for (const addr of uncached) {
               const users = data?.[addr];
               const match = Array.isArray(users) ? users[0] : undefined;
+
               if (match && typeof match === "object") {
                 const profile = match as {
                   username?: string;
                   display_name?: string;
                   pfp_url?: string;
+                  fid?: number;
                 };
+
                 if (profile.username) {
                   const identity = {
                     username: profile.username,
-                    displayName: profile.display_name ?? profile.username,
+                    displayName:
+                      profile.display_name ?? profile.username,
                     pfpUrl: profile.pfp_url ?? "",
                   };
+
                   identities.set(addr, identity);
+
                   await redis.set(
                     `neynar:addr:${addr}`,
                     JSON.stringify({
                       ...identity,
-                      fid: (match as { fid?: number }).fid ?? 0,
+                      fid: profile.fid ?? 0,
                     }),
                     { ex: 300 }
                   );
                 } else {
-                  await redis.set(`neynar:addr:${addr}`, "__NO_USER__", {
-                    ex: 120,
-                  });
+                  await redis.set(
+                    `neynar:addr:${addr}`,
+                    "__NO_USER__",
+                    { ex: 120 }
+                  );
                 }
               } else {
-                await redis.set(`neynar:addr:${addr}`, "__NO_USER__", {
-                  ex: 120,
-                });
+                await redis.set(
+                  `neynar:addr:${addr}`,
+                  "__NO_USER__",
+                  { ex: 120 }
+                );
               }
             }
           }
@@ -177,24 +255,55 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const zaps = tips.map((t) => ({
-      txHash: t.txHash,
-      amountUsdc: t.amountUsdc,
-      tokenSymbol: t.tokenSymbol,
-      timestamp: Math.floor(t.timestamp / 1000),
-      from: {
-        address: t.from,
-        ...(identities.get(t.from.toLowerCase()) ?? {}),
-      },
-      to: {
-        address: t.to,
-        ...(identities.get(t.to.toLowerCase()) ?? {}),
-      },
-    }));
+    const zaps = tips.map((t) => {
+      const classification = classifySignal(t.amountUsdc);
 
-    return Response.json({ zaps });
+      return {
+        txHash: t.txHash,
+        amountUsdc: t.amountUsdc,
+        tokenSymbol: t.tokenSymbol,
+        timestamp: Math.floor(t.timestamp / 1000),
+
+        signalType: classification.type,
+        importance: classification.importance,
+        signalLabel: classification.label,
+        context: classification.context,
+
+        from: {
+          address: t.from,
+          ...(identities.get(t.from.toLowerCase()) ?? {}),
+        },
+
+        to: {
+          address: t.to,
+          ...(identities.get(t.to.toLowerCase()) ?? {}),
+        },
+      };
+    });
+
+    return Response.json({
+      zaps,
+      meta: {
+        source: "BaseZap",
+        verified: true,
+        network: "Base",
+        description: "Verified BaseZap activity recorded onchain.",
+      },
+    });
   } catch (err) {
     console.error("Recent zaps API error:", err);
-    return Response.json({ zaps: [], error: true }, { status: 200 });
+
+    return Response.json(
+      {
+        zaps: [],
+        meta: {
+          source: "BaseZap",
+          verified: true,
+          network: "Base",
+        },
+        error: true,
+      },
+      { status: 200 }
+    );
   }
 }
