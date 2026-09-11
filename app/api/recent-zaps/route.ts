@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { Redis } from "@upstash/redis";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { toBaseSignal, type BaseZapTipRecord } from "@/lib/signals/basezap-source";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL as string,
@@ -12,56 +13,10 @@ const redis = new Redis({
 export const revalidate = 30;
 
 const MAX_ZAPS = 12;
-
 const RATE_LIMIT = 20;
 const RATE_WINDOW_SECONDS = 60;
 
-type TipRecord = {
-  from: string;
-  to: string;
-  amountUsdc: number;
-  txHash: string;
-  tokenSymbol: string;
-  timestamp: number;
-};
-
-type SignalType = "tip" | "support" | "large_transfer";
-
-type SignalImportance = "low" | "medium" | "high";
-
-function classifySignal(amountUsdc: number): {
-  type: SignalType;
-  importance: SignalImportance;
-  label: string;
-  context: string;
-} {
-  if (amountUsdc >= 5) {
-    return {
-      type: "large_transfer",
-      importance: "high",
-      label: "High-value signal",
-      context: "A larger BaseZap tip was sent onchain.",
-    };
-  }
-
-  if (amountUsdc >= 1) {
-    return {
-      type: "support",
-      importance: "medium",
-      label: "Support signal",
-      context: "A meaningful onchain tip was sent to support another user.",
-    };
-  }
-
-  return {
-    type: "tip",
-    importance: "low",
-    label: "Tip signal",
-    context: "A Base user sent an onchain tip.",
-  };
-}
-
-function parseTipRecord(value: unknown): TipRecord | null {
+function parseTipRecord(value: unknown): BaseZapTipRecord | null {
   let parsed: unknown = value;
 
   if (typeof value === "string") {
@@ -98,14 +53,7 @@ function parseTipRecord(value: unknown): TipRecord | null {
     return null;
   }
 
-  return {
-    from,
-    to,
-    amountUsdc,
-    txHash,
-    tokenSymbol,
-    timestamp,
-  };
+  return { from, to, amountUsdc, txHash, tokenSymbol, timestamp };
 }
 
 export async function GET(req: NextRequest) {
@@ -121,10 +69,7 @@ export async function GET(req: NextRequest) {
   if (!allowed) {
     return Response.json(
       { error: "Too many requests, please slow down." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(resetSeconds) },
-      }
+      { status: 429, headers: { "Retry-After": String(resetSeconds) } }
     );
   }
 
@@ -133,26 +78,17 @@ export async function GET(req: NextRequest) {
       rev: true,
     });
 
-    const tips: TipRecord[] = (rawMembers as unknown[])
+    const tips: BaseZapTipRecord[] = (rawMembers as unknown[])
       .map(parseTipRecord)
-      .filter((t): t is TipRecord => t !== null);
+      .filter((t): t is BaseZapTipRecord => t !== null);
 
     const addresses = Array.from(
-      new Set(
-        tips.flatMap((t) => [
-          t.from.toLowerCase(),
-          t.to.toLowerCase(),
-        ])
-      )
+      new Set(tips.flatMap((t) => [t.from.toLowerCase(), t.to.toLowerCase()]))
     );
 
     const identities = new Map<
       string,
-      {
-        username: string;
-        displayName: string;
-        pfpUrl: string;
-      }
+      { username: string; displayName: string; pfpUrl: string }
     >();
 
     const apiKey = process.env.NEYNAR_API_KEY;
@@ -195,10 +131,7 @@ export async function GET(req: NextRequest) {
           url.searchParams.set("addresses", uncached.join(","));
 
           const res = await fetch(url, {
-            headers: {
-              accept: "application/json",
-              "x-api-key": apiKey,
-            },
+            headers: { accept: "application/json", "x-api-key": apiKey },
             next: { revalidate: 60 },
           });
 
@@ -220,8 +153,7 @@ export async function GET(req: NextRequest) {
                 if (profile.username) {
                   const identity = {
                     username: profile.username,
-                    displayName:
-                      profile.display_name ?? profile.username,
+                    displayName: profile.display_name ?? profile.username,
                     pfpUrl: profile.pfp_url ?? "",
                   };
 
@@ -229,25 +161,18 @@ export async function GET(req: NextRequest) {
 
                   await redis.set(
                     `neynar:addr:${addr}`,
-                    JSON.stringify({
-                      ...identity,
-                      fid: profile.fid ?? 0,
-                    }),
+                    JSON.stringify({ ...identity, fid: profile.fid ?? 0 }),
                     { ex: 300 }
                   );
                 } else {
-                  await redis.set(
-                    `neynar:addr:${addr}`,
-                    "__NO_USER__",
-                    { ex: 120 }
-                  );
+                  await redis.set(`neynar:addr:${addr}`, "__NO_USER__", {
+                    ex: 120,
+                  });
                 }
               } else {
-                await redis.set(
-                  `neynar:addr:${addr}`,
-                  "__NO_USER__",
-                  { ex: 120 }
-                );
+                await redis.set(`neynar:addr:${addr}`, "__NO_USER__", {
+                  ex: 120,
+                });
               }
             }
           }
@@ -255,31 +180,20 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const zaps = tips.map((t) => {
-      const classification = classifySignal(t.amountUsdc);
+    const signals = tips.map((t) => toBaseSignal(t, identities));
 
-      return {
-        txHash: t.txHash,
-        amountUsdc: t.amountUsdc,
-        tokenSymbol: t.tokenSymbol,
-        timestamp: Math.floor(t.timestamp / 1000),
-
-        signalType: classification.type,
-        importance: classification.importance,
-        signalLabel: classification.label,
-        context: classification.context,
-
-        from: {
-          address: t.from,
-          ...(identities.get(t.from.toLowerCase()) ?? {}),
-        },
-
-        to: {
-          address: t.to,
-          ...(identities.get(t.to.toLowerCase()) ?? {}),
-        },
-      };
-    });
+    const zaps = signals.map((s) => ({
+      txHash: s.transaction!.hash,
+      amountUsdc: s.amount!.value,
+      tokenSymbol: s.amount!.symbol,
+      timestamp: s.timestamp,
+      signalType: s.type,
+      importance: s.importance,
+      signalLabel: s.label,
+      context: s.context,
+      from: s.from,
+      to: s.to,
+    }));
 
     return Response.json({
       zaps,
@@ -296,11 +210,7 @@ export async function GET(req: NextRequest) {
     return Response.json(
       {
         zaps: [],
-        meta: {
-          source: "BaseZap",
-          verified: true,
-          network: "Base",
-        },
+        meta: { source: "BaseZap", verified: true, network: "Base" },
         error: true,
       },
       { status: 200 }
