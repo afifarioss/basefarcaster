@@ -50,7 +50,10 @@ const destinations = [
 
 function Arrow() {
   return (
-    <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">
+    <span
+      aria-hidden="true"
+      className="transition-transform duration-200 group-hover:translate-x-1"
+    >
       →
     </span>
   );
@@ -59,12 +62,52 @@ function Arrow() {
 export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden bg-noise-grid">
+      <style>{`
+        @keyframes aperture-breathe {
+          0%, 100% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 18px rgba(47,107,255,.18));
+          }
+          50% {
+            transform: scale(1.025);
+            filter: drop-shadow(0 0 34px rgba(47,107,255,.38));
+          }
+        }
+
+        @keyframes aperture-orbit {
+          0%, 100% {
+            opacity: .45;
+          }
+          50% {
+            opacity: .9;
+          }
+        }
+
+        .aperture-hero {
+          animation: aperture-breathe 5s ease-in-out infinite;
+        }
+
+        .aperture-signal {
+          animation: aperture-orbit 3s ease-in-out infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .aperture-hero,
+          .aperture-signal {
+            animation: none;
+          }
+        }
+      `}</style>
+
       <header className="relative z-20 border-b border-white/[0.06] bg-surface-void/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
           <a href="/" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-base-blue/60 bg-base-blue shadow-lg shadow-base-blue/20">
-              <span className="font-display text-sm font-bold text-white">Z</span>
-            </span>
+            <img
+              src="/brand/basezap-emblem-color.svg"
+              alt=""
+              aria-hidden="true"
+              className="h-8 w-8"
+            />
             <span className="font-display text-[15px] font-bold tracking-tight text-white">
               BaseZap
             </span>
@@ -79,17 +122,31 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="relative px-5 pb-24 pt-24 sm:px-8 sm:pb-32 sm:pt-32">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[620px] bg-[radial-gradient(circle_at_50%_0%,rgba(0,82,255,0.20),transparent_62%)]" />
-        <div className="pointer-events-none absolute left-1/2 top-24 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-base-blue/10 blur-[120px]" />
+      <section className="relative px-5 pb-24 pt-16 sm:px-8 sm:pb-32 sm:pt-20">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[760px] bg-[radial-gradient(circle_at_50%_15%,rgba(47,107,255,0.14),transparent_58%)]" />
+        <div className="pointer-events-none absolute left-1/2 top-32 h-[460px] w-[460px] -translate-x-1/2 rounded-full bg-base-blue/10 blur-[140px]" />
 
         <div className="relative mx-auto max-w-6xl">
-          <div className="max-w-4xl">
-            <p className="animate-fade-up text-[10px] font-semibold uppercase tracking-[0.24em] text-base-blueLight/80">
+          <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+            <a
+              href="/now"
+              aria-label="Explore BaseNow"
+              className="group relative mb-10 block rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-base-blueLight focus-visible:ring-offset-8 focus-visible:ring-offset-[#050709]"
+            >
+              <div className="pointer-events-none absolute inset-[-34px] rounded-full bg-base-blue/10 blur-3xl transition duration-500 group-hover:bg-base-blue/20" />
+              <div className="aperture-signal pointer-events-none absolute inset-[-12px] rounded-full border border-base-blueLight/10" />
+              <img
+                src="/brand/basezap-emblem-color.svg"
+                alt="BaseZap Aperture Z"
+                className="aperture-hero relative h-44 w-44 transition duration-500 group-hover:scale-[1.06] sm:h-56 sm:w-56 lg:h-64 lg:w-64"
+              />
+            </a>
+
+            <p className="animate-fade-up text-[10px] font-semibold uppercase tracking-[0.28em] text-base-blueLight/80">
               BaseZap · Base Mainnet
             </p>
 
-            <h1 className="mt-6 max-w-4xl font-display text-[3.5rem] font-bold leading-[0.91] tracking-[-0.055em] text-white sm:text-7xl lg:text-[6.8rem]">
+            <h1 className="mt-5 max-w-4xl font-display text-[3.4rem] font-bold leading-[0.92] tracking-[-0.055em] text-white sm:text-7xl lg:text-[6.5rem]">
               The interaction
               <br />
               layer for{" "}
@@ -98,12 +155,12 @@ export default function Home() {
               </span>
             </h1>
 
-            <p className="mt-8 max-w-2xl text-base leading-7 text-white/45 sm:text-lg">
-              Discover what is happening. Support people. Pay agents.
-              Explore the Base economy through one simple entry point.
+            <p className="mt-7 max-w-2xl text-base leading-7 text-white/50 sm:text-lg">
+              See what is happening on Base. Discover people, projects,
+              agents, and activity — then decide where to go next.
             </p>
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
               <a
                 href="/now"
                 className="btn-primary inline-flex items-center justify-center gap-2 !py-3.5 px-6 text-sm"
@@ -117,13 +174,21 @@ export default function Home() {
                 Open BaseZap App <Arrow />
               </a>
             </div>
+
+            <div className="mt-14 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">
+              <span className="text-base-blueLight/70">See</span>
+              <span>→</span>
+              <span>Explore</span>
+              <span>→</span>
+              <span>Interact</span>
+            </div>
           </div>
 
           <div className="mt-20 grid gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.08] sm:grid-cols-3">
             {[
-              ["01", "DISCOVER", "Signals become places to explore."],
-              ["02", "UNDERSTAND", "Follow the people, projects, and agents behind them."],
-              ["03", "ACT", "Move from information to an onchain action."],
+              ["01", "SEE", "Signals show you where something is happening."],
+              ["02", "EXPLORE", "Follow the people, projects, and agents behind it."],
+              ["03", "INTERACT", "Move from discovery to an onchain action."],
             ].map(([number, label, text]) => (
               <div key={number} className="bg-[#05070b]/95 px-5 py-6 sm:px-6">
                 <p className="font-mono text-[10px] text-base-blueLight/60">
@@ -153,8 +218,8 @@ export default function Home() {
               </h2>
             </div>
             <p className="max-w-sm text-sm leading-6 text-white/35">
-              Each destination goes deeper into a specific part of the
-              BaseZap ecosystem.
+              Choose a direction. Go deeper only when something catches your
+              attention.
             </p>
           </div>
 
@@ -192,20 +257,29 @@ export default function Home() {
       </section>
 
       <section className="relative px-5 py-24 sm:px-8 sm:py-32">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_50%_100%,rgba(0,82,255,0.14),transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_50%_100%,rgba(47,107,255,0.14),transparent_65%)]" />
 
         <div className="relative mx-auto max-w-4xl text-center">
+          <img
+            src="/brand/basezap-emblem-color.svg"
+            alt=""
+            aria-hidden="true"
+            className="mx-auto mb-8 h-16 w-16 opacity-80"
+          />
+
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-base-blueLight/70">
             Enter BaseZap
           </p>
+
           <h2 className="mt-4 font-display text-4xl font-bold tracking-[-0.045em] text-white sm:text-6xl">
             Discover first.
             <br />
             Then act.
           </h2>
+
           <p className="mx-auto mt-5 max-w-lg text-sm leading-6 text-white/40 sm:text-base">
-            Explore the Base economy, find a signal worth following, and
-            move into the application when you are ready.
+            Explore the Base economy, find a signal worth following, and move
+            into the application when you are ready.
           </p>
 
           <a
