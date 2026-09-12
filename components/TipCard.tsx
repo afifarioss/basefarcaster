@@ -426,6 +426,7 @@ export function TipCard({
           amount={amount}
           txHash={resolvedTxHash}
           tokenSymbol={tokenSymbol}
+          feeBps={effectiveFeeBps}
           onClose={() => setStatus("idle")}
         />
       )}

@@ -14,12 +14,14 @@ export function SuccessModal({
   recipientLabel,
   txHash,
   tokenSymbol = "USDC",
+  feeBps = PLATFORM_FEE_BPS,
   onClose,
 }: {
   amount: number;
   recipientLabel: string;
   txHash?: string;
   tokenSymbol?: string;
+  feeBps?: number;
   onClose: () => void;
 }) {
   const { address } = useAccount();
@@ -85,8 +87,8 @@ export function SuccessModal({
           You tipped {recipientLabel} {formatUsdc(amount)} {tokenSymbol}
         </h3>
         <p className="mt-1 text-center text-sm text-white/55">
-          {formatUsdc(amount * (1 - PLATFORM_FEE_BPS / 10000))} {tokenSymbol}{" "}
-          delivered on Base ({formatUsdc(amount * (PLATFORM_FEE_BPS / 10000))}{" "}
+          {formatUsdc(amount * (1 - feeBps / 10000))} {tokenSymbol}{" "}
+          delivered on Base ({formatUsdc(amount * (feeBps / 10000))}{" "}
           {tokenSymbol} platform fee). It just cleared in seconds.
         </p>
 
