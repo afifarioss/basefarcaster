@@ -34,6 +34,7 @@ export function WalletConnect() {
         setOpen(false);
       }
     }
+
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
@@ -60,9 +61,12 @@ export function WalletConnect() {
                 Connected via
               </p>
               <p className="mt-0.5 text-sm font-medium text-white">
-                {connector ? connectorLabel(connector.id, connector.name) : "Wallet"}
+                {connector
+                  ? connectorLabel(connector.id, connector.name)
+                  : "Wallet"}
               </p>
             </div>
+
             <div className="mt-2 rounded-xl bg-white/[0.03] p-3">
               <p className="text-[11px] uppercase tracking-wide text-white/40">
                 USDC Balance
@@ -75,6 +79,7 @@ export function WalletConnect() {
                   : "—"}
               </p>
             </div>
+
             <button
               onClick={() => {
                 disconnect();
@@ -97,24 +102,36 @@ export function WalletConnect() {
         disabled={isPending}
         className="btn-primary !px-5 !py-2.5 !text-sm"
       >
-        {isPending ? "Connecting…" : "Connect Wallet"}
+        {isPending ? "Connecting…" : "Connect wallet"}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-30 mt-2 w-72 animate-scale-in rounded-2xl border border-white/[0.08] bg-[#0D0E10] p-2 shadow-2xl">
-          {connectors.map((c) => (
-            <button
-              key={c.uid}
-              onClick={() => {
-                connect({ connector: c });
-                setOpen(false);
-              }}
-              className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/[0.06]"
-            >
-              {connectorLabel(c.id, c.name)}
-              <span className="text-white/30">→</span>
-            </button>
-          ))}
+        <div className="absolute right-0 z-30 mt-2 w-80 animate-scale-in rounded-2xl border border-white/[0.08] bg-[#0D0E10] p-3 shadow-2xl">
+          <div className="px-2 pb-3">
+            <p className="text-sm font-semibold text-white">
+              Connect your wallet
+            </p>
+            <p className="mt-1.5 text-[11px] leading-5 text-white/40">
+              Connecting identifies your wallet. It does not send tokens or
+              approve a payment.
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            {connectors.map((c) => (
+              <button
+                key={c.uid}
+                onClick={() => {
+                  connect({ connector: c });
+                  setOpen(false);
+                }}
+                className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:bg-white/[0.06]"
+              >
+                <span>{connectorLabel(c.id, c.name)}</span>
+                <span className="text-white/30">→</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

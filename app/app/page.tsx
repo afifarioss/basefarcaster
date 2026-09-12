@@ -15,7 +15,6 @@ import { ShareButton } from "@/components/ShareButton";
 import { RecentZaps } from "@/components/RecentZaps";
 import { Leaderboard } from "@/components/Leaderboard";
 import { TipHistory } from "@/components/TipHistory";
-import { ZapWidget } from "@/components/ZapWidget";
 import { ZapSection } from "@/components/ZapSection";
 import { AgentExplanation } from "@/components/AgentExplanation";
 import { BuiltWith } from "@/components/BuiltWith";
@@ -127,12 +126,11 @@ function HomeContent() {
           </div>
 
           <TrustChecklist />
-            <RecentZaps onCtaClick={() => tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })} />
+          <RecentZaps onCtaClick={() => tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })} />
           <Leaderboard />
           <TipHistory />
           <ShareButton className="btn-secondary w-full max-w-md" />
           <ZapSection />
-          <ZapWidget />
           <AgentExplanation />
           <div className="w-full max-w-md space-y-2">
             <a

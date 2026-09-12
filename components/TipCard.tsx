@@ -407,7 +407,7 @@ export function TipCard({
           ? "Confirm in wallet…"
           : isConnected
           ? `Tip ${formatUsdc(amount)} ${tokenSymbol}`
-          : "Connect & Tip"}
+          : "Connect wallet"}
       </button>
 
       {(status === "sending" || isPending) && elapsedSeconds >= 3 && (
