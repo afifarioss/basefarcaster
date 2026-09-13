@@ -16,7 +16,7 @@ import {
   ZAP_HOLDER_THRESHOLD,
   type TippableTokenSymbol,
 } from "@/lib/constants";
-import { formatUsdc, formatAddress, splitTipAmount } from "@/lib/utils";
+import { formatUsdc, formatTokenAmount, formatAddress, splitTipAmount } from "@/lib/utils";
 import { SuccessModal } from "./SuccessModal";
 
 export function TipCard({
@@ -39,6 +39,7 @@ export function TipCard({
   const { sendCalls, isPending } = useSendCalls();
   const [callsId, setCallsId] = useState<string | undefined>(undefined);
   const historyRecordedRef = useRef(false);
+  const notificationRecordedRef = useRef(false);
   const { data: callsStatus } = useCallsStatus({
     id: callsId as string,
     query: {
@@ -146,10 +147,41 @@ export function TipCard({
     }
   }, [resolvedTxHash, address, tokenSymbol, recipient, amount, effectiveFeeBps]);
 
-  const { fee, recipientAmount } = useMemo(
+  const { total, fee, recipientAmount } = useMemo(
     () => splitTipAmount(amount || 0, decimals, effectiveFeeBps),
     [amount, decimals, effectiveFeeBps]
   );
+
+  useEffect(() => {
+    if (
+      callsStatus?.status === "success" &&
+      resolvedTxHash &&
+      recipientFid &&
+      callsId &&
+      !notificationRecordedRef.current
+    ) {
+      notificationRecordedRef.current = true;
+      fetch("/api/notify-tip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fid: recipientFid,
+          walletAddress: recipient,
+          amount,
+          tokenSymbol,
+          callsId,
+        }),
+      }).catch(() => {});
+    }
+  }, [
+    callsStatus?.status,
+    resolvedTxHash,
+    recipientFid,
+    callsId,
+    recipient,
+    amount,
+    tokenSymbol,
+  ]);
 
   async function handleTip() {
     if (amount <= 0) return;
@@ -230,19 +262,6 @@ export function TipCard({
           onSuccess: (data) => {
             setCallsId(data.id);
             setStatus("sending");
-            if (recipientFid) {
-              fetch("/api/notify-tip", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  fid: recipientFid,
-                  walletAddress: recipient,
-                  amount,
-                  tokenSymbol,
-                  callsId: data.id,
-                }),
-              }).catch(() => {});
-            }
           },
           onError: (err) => {
             setErrorMsg(err.message.split("\n")[0].slice(0, 140));
@@ -257,8 +276,8 @@ export function TipCard({
   }
 
   const feePercent = effectiveFeeBps / 100;
-  const feeAmount = amount ? (amount * effectiveFeeBps) / 10000 : 0;
-  const creatorReceives = amount ? amount - feeAmount : 0;
+  const feeDisplay = formatTokenAmount(fee, decimals);
+  const creatorReceivesDisplay = formatTokenAmount(recipientAmount, decimals);
 
   return (
     <div className="glass-card w-full max-w-md p-6">
@@ -363,7 +382,7 @@ export function TipCard({
         <div className="flex justify-between text-white/55">
           <span>{recipientLabel} receives</span>
           <span className="text-white/85">
-            {formatUsdc(creatorReceives)} {tokenSymbol}
+            {creatorReceivesDisplay} {tokenSymbol}
           </span>
         </div>
         <div className="flex justify-between text-white/40">
@@ -372,13 +391,13 @@ export function TipCard({
             {!isZapHolder && ` (${feePercent}%)`}
           </span>
           <span>
-            {formatUsdc(feeAmount)} {tokenSymbol}
+            {feeDisplay} {tokenSymbol}
           </span>
         </div>
         <div className="!mt-2.5 flex justify-between border-t border-white/[0.06] pt-2.5 font-semibold text-white">
           <span>Total</span>
           <span>
-            {formatUsdc(amount)} {tokenSymbol}
+            {formatTokenAmount(total, decimals)} {tokenSymbol}
           </span>
         </div>
       </div>
@@ -406,7 +425,7 @@ export function TipCard({
         {status === "sending" || isPending
           ? "Confirm in wallet…"
           : isConnected
-          ? `Tip ${formatUsdc(amount)} ${tokenSymbol}`
+          ? `Tip ${formatTokenAmount(total, decimals)} ${tokenSymbol}`
           : "Connect wallet"}
       </button>
 
@@ -426,6 +445,7 @@ export function TipCard({
           amount={amount}
           txHash={resolvedTxHash}
           tokenSymbol={tokenSymbol}
+          decimals={decimals}
           feeBps={effectiveFeeBps}
           onClose={() => setStatus("idle")}
         />

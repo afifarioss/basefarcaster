@@ -6,7 +6,7 @@ import { useAccount } from "wagmi";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { ShareButton } from "./ShareButton";
-import { formatUsdc } from "@/lib/utils";
+import { formatTokenAmount, splitTipAmount } from "@/lib/utils";
 import { APP_URL, PLATFORM_FEE_BPS } from "@/lib/constants";
 
 export function SuccessModal({
@@ -15,6 +15,7 @@ export function SuccessModal({
   txHash,
   tokenSymbol = "USDC",
   feeBps = PLATFORM_FEE_BPS,
+  decimals = 6,
   onClose,
 }: {
   amount: number;
@@ -22,16 +23,18 @@ export function SuccessModal({
   txHash?: string;
   tokenSymbol?: string;
   feeBps?: number;
+  decimals?: number;
   onClose: () => void;
 }) {
   const { address } = useAccount();
   const { context } = useMiniKit();
   const [linkCopied, setLinkCopied] = useState(false);
+  const { total, fee, recipientAmount } = splitTipAmount(amount, decimals, feeBps);
 
   async function handleCastZap() {
     try {
       await sdk.actions.composeCast({
-        text: `I just zapped ${recipientLabel} ${formatUsdc(amount)} ${tokenSymbol} on BaseZap ⚡\n\nTip good casts, not just like them.`,
+        text: `I just zapped ${recipientLabel} ${formatTokenAmount(total, decimals)} ${tokenSymbol} on BaseZap ⚡\n\nTip good casts, not just like them.`,
         embeds: [APP_URL],
       });
     } catch {
@@ -84,11 +87,11 @@ export function SuccessModal({
         </div>
 
         <h3 className="mt-5 text-center font-display text-xl font-bold text-white">
-          You tipped {recipientLabel} {formatUsdc(amount)} {tokenSymbol}
+          You tipped {recipientLabel} {formatTokenAmount(total, decimals)} {tokenSymbol}
         </h3>
         <p className="mt-1 text-center text-sm text-white/55">
-          {formatUsdc(amount * (1 - feeBps / 10000))} {tokenSymbol}{" "}
-          delivered on Base ({formatUsdc(amount * (feeBps / 10000))}{" "}
+          {formatTokenAmount(recipientAmount, decimals)} {tokenSymbol}{" "}
+          delivered on Base ({formatTokenAmount(fee, decimals)}{" "}
           {tokenSymbol} platform fee). It just cleared in seconds.
         </p>
 

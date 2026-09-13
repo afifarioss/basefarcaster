@@ -42,6 +42,22 @@ export function formatUsdc(amount: number) {
   });
 }
 
+export function formatTokenAmount(amount: bigint, decimals: number) {
+  const negative = amount < BigInt(0);
+  const absolute = negative ? -amount : amount;
+  const raw = absolute.toString().padStart(decimals + 1, "0");
+  const whole = raw.slice(0, -decimals) || "0";
+  const fraction = raw.slice(-decimals);
+
+  const trimmedFraction = fraction.slice(0, 2).padEnd(2, "0");
+  const value = Number(`${whole}.${trimmedFraction}`);
+
+  return (negative ? -value : value).toLocaleString("en-US", {
+    minimumFractionDigits: value < 1 ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
+}
+
 /** Builds a Warpcast compose URL for the "Share on Farcaster" flow. */
 export function buildShareUrl(text: string, embedUrl: string) {
   const params = new URLSearchParams({
