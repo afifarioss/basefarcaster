@@ -46,9 +46,11 @@ export default function Home() {
       <header className="border-b border-black/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
           <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-sm font-bold text-white">
-              B
-            </div>
+            <img
+              src="/brand/basezap-emblem-color.svg"
+              alt="BaseZap"
+              className="h-9 w-9 object-contain"
+            />
             <span className="text-lg font-semibold tracking-tight">
               BaseZap
             </span>
