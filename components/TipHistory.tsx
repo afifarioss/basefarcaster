@@ -121,7 +121,7 @@ export function TipHistory() {
           <TipAvatar identity={tip.to} />
           <TipLabel identity={tip.to} />
           <span className="ml-auto shrink-0 text-xs font-semibold text-emerald-400">
-            ${tip.amountUsdc.toFixed(2)}
+            {tip.amountUsdc.toFixed(2)} {tip.tokenSymbol || "USDC"}
           </span>
           <span className="shrink-0 text-[10px] text-white/35">
             {timeAgo(tip.timestamp)}

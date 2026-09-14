@@ -13,6 +13,7 @@ type Identity = {
 type Zap = {
   txHash: string;
   amountUsdc: number;
+  tokenSymbol: string;
   timestamp: number;
   from: Identity;
   to: Identity;
@@ -250,7 +251,7 @@ export default function HumanPage() {
 
                       <div className="flex shrink-0 items-center gap-4 text-right">
                         <span className="font-mono text-sm text-base-blueLight">
-                          {zap.amountUsdc.toFixed(2)} USDC
+                          {zap.amountUsdc.toFixed(2)} {zap.tokenSymbol || "USDC"}
                         </span>
                         <span className="text-[10px] uppercase tracking-[0.12em] text-white/25">
                           {timeAgo(zap.timestamp)}

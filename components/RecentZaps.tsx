@@ -13,6 +13,7 @@ type ZapIdentity = {
 type Zap = {
   txHash: string;
   amountUsdc: number;
+  tokenSymbol: string;
   timestamp: number | null;
   from: ZapIdentity;
   to: ZapIdentity;
@@ -114,7 +115,7 @@ export function RecentZaps({ onCtaClick }: { onCtaClick?: () => void } = {}) {
           <ZapAvatar identity={zap.to} />
           <ZapLabel identity={zap.to} />
           <span className="ml-auto shrink-0 text-xs font-semibold text-emerald-400">
-            ${zap.amountUsdc.toFixed(2)}
+            {zap.amountUsdc.toFixed(2)} {zap.tokenSymbol || "USDC"}
           </span>
           {zap.timestamp && (
             <span className="shrink-0 text-[10px] text-white/35">
