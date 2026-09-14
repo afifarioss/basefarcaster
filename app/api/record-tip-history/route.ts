@@ -12,6 +12,7 @@ import {
   DIEM_DECIMALS,
   USDC_ADDRESS,
   USDC_DECIMALS,
+  VVV_ADDRESS,
   PLATFORM_FEE_BPS,
   PLATFORM_FEE_WALLET,
   ERC20_ABI,
@@ -57,20 +58,46 @@ export async function POST(req: Request) {
 
     const selectedToken = tokenSymbol ?? "USDC";
 
-    // History verification supports USDC and optional DIEM.
-    // VVV remains outside this verification path for now.
+    // History verification supports every token available to the tip flow.
+    // VVV decimals are read from the token contract instead of being guessed.
     const tokenConfig =
       selectedToken === "USDC"
         ? { address: USDC_ADDRESS, decimals: USDC_DECIMALS }
         : selectedToken === "DIEM"
           ? { address: DIEM_ADDRESS, decimals: DIEM_DECIMALS }
-          : null;
+          : selectedToken === "VVV"
+            ? { address: VVV_ADDRESS, decimals: null }
+            : null;
 
     if (!tokenConfig) {
       return Response.json(
         { ok: false, error: "unsupported token for verification" },
         { status: 400 }
       );
+    }
+
+    let tokenDecimals = tokenConfig.decimals;
+
+    if (tokenDecimals === null) {
+      try {
+        tokenDecimals = Number(
+          await client.readContract({
+            address: tokenConfig.address,
+            abi: ERC20_ABI,
+            functionName: "decimals",
+          })
+        );
+      } catch (err) {
+        console.warn(
+          "record-tip-history: unable to read token decimals",
+          selectedToken,
+          err
+        );
+        return Response.json(
+          { ok: false, error: "unable to determine token decimals" },
+          { status: 400 }
+        );
+      }
     }
 
     let receipt;
@@ -124,7 +151,7 @@ export async function POST(req: Request) {
     // Use the selected token's decimals for exact onchain verification.
     const { fee, recipientAmount } = splitTipAmount(
       amountUsdc,
-      tokenConfig.decimals,
+      tokenDecimals,
       serverFeeBps
     );
 
