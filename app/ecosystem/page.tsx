@@ -186,9 +186,9 @@ export default function EcosystemPage() {
 
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
             {[
-              ["Agent economy", "Connect people and agents through programmable interactions."],
-              ["Discovery", "Give meaningful activity a path from signal to action."],
-              ["Ecosystem access", "Build deeper connections across Base and Venice."],
+              ["Projects", "Explore applications and products being built on Base."],
+              ["Builders", "Discover the teams and builders creating onchain products."],
+              ["Protocols", "Understand the infrastructure and protocols powering Base."],
             ].map(([title, text]) => (
               <div key={title} className="glass-card p-6">
                 <h3 className="font-display text-lg font-bold text-white">
@@ -209,21 +209,15 @@ export default function EcosystemPage() {
             Continue exploring
           </p>
           <h2 className="mt-4 font-display text-4xl font-bold tracking-[-0.045em] text-white sm:text-6xl">
-            Discover the
+            Explore what is being built
             <br />
-            BaseZap ecosystem.
+            on Base.
           </h2>
 
-          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <a
-              href="/now"
-              className="btn-primary inline-flex items-center justify-center gap-2 !py-3.5 px-7 text-sm"
-            >
-              Explore BaseNow →
-            </a>
+          <div className="mt-8 flex justify-center">
             <a
               href="/app"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.025] px-7 py-3.5 text-sm font-semibold text-white/70 transition hover:border-white/[0.18] hover:bg-white/[0.05] hover:text-white"
+              className="btn-primary inline-flex items-center justify-center gap-2 !py-3.5 px-7 text-sm"
             >
               Open BaseZap App →
             </a>
